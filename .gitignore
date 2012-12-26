@@ -1,0 +1,10 @@
+libvrender/*.swp
+libvrender/*.[ao]
+libvrender/*.user
+
+vrender-gui/*.swp
+vrender-gui/*.[o]
+vrender-gui/*.user
+
+libvrender-build/
+vrender-gui-build/

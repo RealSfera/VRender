@@ -11,6 +11,9 @@ TEMPLATE = app
 INCLUDEPATH += include ../libvrender/include/
 LIBS += -L../libvrender-build/ -lvrender
 
+win32: LIBS += -lopengl32 -lgdi32
+unix:  LIBS += -lGL
+
 PRE_TARGETDEPS += ../libvrender-build/libvrender.a
 
 SOURCES += src/main.cpp \

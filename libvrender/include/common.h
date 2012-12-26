@@ -1,4 +1,4 @@
-/*
+﻿/*
  *  Copyright (C) 2012 Evgeny Panov
  *  This file is part of libvrender.
  *
@@ -24,11 +24,12 @@
 
 #ifndef __WIN32
     #define GLCOREARB_PROTOTYPES
+    #include "GL/glcorearb.h"
 #endif
 
-#include "GL/glcorearb.h"
-
 #ifdef __WIN32
+	#include "GL/gl.h"
+    #include "GL/glext.h"
     #include "gl_funcs.h"
 #endif
 

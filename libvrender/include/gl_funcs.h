@@ -1,4 +1,4 @@
-/*
+﻿/*
  *  Copyright (C) 2012 Evgeny Panov
  *  This file is part of libvrender.
  *
@@ -27,6 +27,15 @@
 	#define GL_GET_PROC_ADR(proc_type, proc_name) proc_name = (proc_type) wglGetProcAddress((LPCSTR) #proc_name)	
 #endif
 
+#ifndef __gl_h_
+// 1.0
+extern PFNGLGENTEXTURESPROC glGenTextures;
+extern PFNGLDELETETEXTURESPROC glDeleteTextures;
+extern PFNGLBINDTEXTUREPROC glBindTexture;
+extern PFNGLDRAWARRAYSPROC glDrawArrays;
+extern PFNGLDRAWELEMENTSPROC glDrawElements;
+
+// 1.1
 extern PFNGLVIEWPORTPROC glViewport;
 extern PFNGLCLEARPROC glClear;
 extern PFNGLCLEARCOLORPROC glClearColor;
@@ -42,22 +51,18 @@ extern PFNGLCULLFACEPROC glCullFace;
 extern PFNGLTEXPARAMETERIPROC glTexParameteri;
 extern PFNGLTEXIMAGE1DPROC glTexImage1D;
 extern PFNGLTEXIMAGE2DPROC glTexImage2D;
+#endif
+
 extern PFNGLTEXIMAGE3DPROC glTexImage3D;
-extern PFNGLGENTEXTURESPROC glGenTextures;
-extern PFNGLDELETETEXTURESPROC glDeleteTextures;
-extern PFNGLBINDTEXTUREPROC glBindTexture;
 extern PFNGLGENERATEMIPMAPPROC glGenerateMipmap;
-extern PFNGLTEXIMAGE2DMULTISAMPLEPROC glTexImage2DMultisample;
 
 extern PFNGLGENVERTEXARRAYSPROC glGenVertexArrays;
 extern PFNGLBINDVERTEXARRAYPROC glBindVertexArray;
-extern PFNGLDRAWARRAYSPROC glDrawArrays;
 extern PFNGLGENBUFFERSPROC glGenBuffers;
 extern PFNGLBINDBUFFERPROC glBindBuffer;
 extern PFNGLBUFFERDATAPROC glBufferData;
 extern PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer;
 extern PFNGLENABLEVERTEXATTRIBARRAYPROC glEnableVertexAttribArray;
-extern PFNGLDRAWELEMENTSPROC glDrawElements;
 extern PFNGLACTIVETEXTUREPROC glActiveTexture;
 extern PFNGLDELETEBUFFERSPROC glDeleteBuffers;
 extern PFNGLGETBUFFERPARAMETERIVPROC glGetBufferParameteriv;
