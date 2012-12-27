@@ -38,7 +38,7 @@ class MainWindow : public QMainWindow
 		
 	private slots:
 		void on_build_start_clicked();
-		void on_exit_action_triggered();
+		void on_exit_action_triggered() {qApp->quit();}
 		void on_about_program_action_triggered();
 		void on_light_rot_auto_clicked();
 		void on_light_rot_angle_valueChanged(int arg1);

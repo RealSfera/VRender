@@ -53,14 +53,14 @@ set(HEADERS
           ${INCLUDEDIR}/main_shader.h )
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL Linux)
-	set(LIBRARIES m GL)
-    add_definitions(-D__linux)
+	#set(LIBRARIES m GL)
+    #add_definitions(-D__linux)
 
     set(SOURCES ${SOURCES} ${SRCDIR}/threads/thread_linux.c )
 
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL Windows)
-	set(LIBRARIES m opengl32)
-	add_definitions(-D__win32)
+	#set(LIBRARIES m opengl32)
+	#add_definitions(-D__win32)
 
     set(SOURCES ${SOURCES} ${SRCDIR}/threads/thread_win32.c
                            ${SRCDIR}/gl_funcs.c )

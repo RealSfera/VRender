@@ -168,11 +168,6 @@ void MainWindow::on_build_start_clicked()
 	}
 }
 
-void MainWindow::on_exit_action_triggered()
-{
-	qApp->quit();
-}
-
 void MainWindow::on_about_program_action_triggered()
 {
     
