@@ -199,6 +199,7 @@ static float call_vnoise2(float x, float y)
 static float call_vnoise3(float x, float y, float z)
 {
 	return value_noise_3d(vec3f(x, y, z));
+	//return vnoise3d_trilerp_file(vec3f(x, y, z));
 }
 
 /////////////// -----

@@ -41,7 +41,6 @@ static double last_time = 0.0f;
 static parser_t parser;
 static float *volume = NULL;
 static char *str_function = NULL;
-static float *noise3d_data = NULL;
 
 // размер скалярного поля и размер сетки
 static vector3ui volume_size, grid_size;
@@ -93,92 +92,6 @@ static void update_object_orientation(void);
 static void update_camera(double t);
 static int init_shader(void);
 static int init_buffers(void);
-
-
-// размер массива с шумом
-#define SIZE 128
-#include <stdio.h>
-#include <stdlib.h>
-
-// инициализировать численный шум из файла
-static void init_noise3d(void)
-{
-#if 0
-	FILE *file = NULL;
-	const char* filename = "noise3d_128.data";
-	
-	// существует файл с шумом ?...
-	if((file = fopen(filename, "rb")) == NULL) {
-		// ...файла нет, значит нужно создать
-		ERROR_MSG("cannot open file %s for read\n", filename);
-		
-		noise3d_data = (float*) malloc(sizeof(float) * SIZE*SIZE*SIZE);
-		
-		file = fopen(filename, "w");
-		
-		for(unsigned k = 0; k < SIZE; k++) {
-			for(unsigned j = 0; j < SIZE; j++) {
-				for(unsigned i = 0; i < SIZE; i++) {
-					noise3d_data[i + j*SIZE + k*SIZE*SIZE] = 
-							value_noise_3d(vec3f(i, j ,k));
-				}
-			}
-		}
-		fwrite((void*) noise3d_data, sizeof(float), SIZE*SIZE*SIZE, file);
-		fclose(file);
-	} else {
-		// ...файл есть, читаем данные
-		noise3d_data = (float*) malloc(sizeof(float) * SIZE*SIZE*SIZE);
-		fread((void*) noise3d_data, sizeof(float), SIZE*SIZE*SIZE, file);
-		fclose(file);
-	}
-#endif
-}
-
-#if 0
-// трилинейная интерполяция значений
-INLINE float trilerp(float v000, float v100, float v101, float v001,  
-			  float v010, float v110, float v111, float v011, vector3f t)
-{
-	float result = 0.0f;
-	
-	float c1x = math_cerp(v000, v100, t.x);
-	float c2x = math_cerp(v010, v110, t.x);
-	float c3x = math_cerp(v001, v101, t.x);
-	float c4x = math_cerp(v011, v111, t.x);
-	
-	float c1y = math_cerp(c1x, c2x, t.y);
-	float c2y = math_cerp(c3x, c4x, t.y);
-	
-	result = math_cerp(c1y, c2y, t.z);
-	
-	return result;
-}
-
-// трилинейная интерполяция значений шума
-INLINE static float trilerp_noise(vector3f p)
-{
-	#define _volume(vx, vy, vz) noise3d_data[((vx) % SIZE) + ((vy) % SIZE)*SIZE + ((vz) % SIZE)*SIZE*SIZE]
-	
-	int int_px = (int) p.x;
-	int int_py = (int) p.y;
-	int int_pz = (int) p.z;
-	
-	float v000 = _volume( int_px,     int_py,     int_pz );
-	float v100 = _volume( int_px + 1, int_py,     int_pz );
-	float v101 = _volume( int_px + 1, int_py,     int_pz + 1 );
-	float v001 = _volume( int_px,     int_py,     int_pz + 1 );
-	
-	float v010 = _volume( int_px,     int_py + 1, int_pz );
-	float v110 = _volume( int_px + 1, int_py + 1, int_pz );
-	float v111 = _volume( int_px + 1, int_py + 1, int_pz + 1 );
-	float v011 = _volume( int_px,     int_py + 1, int_pz + 1 );
-	
-	vector3f t = vec3f( p.x-int_px, p.y-int_py, p.z-int_pz);
-	
-	return trilerp(v000, v100, v101, v001, v010, v110, v111, v011, t);
-}
-#endif
 
 int init_shader(void)
 {
@@ -304,11 +217,9 @@ int render_init(void)
 	
 	TRACE_MSG("init base render system\n");
 	
-	if(!noise3d_data) {
-		TRACE_MSG("init 3D noise...\n");
-		init_noise3d();
-		TRACE_MSG("noise initiliazed\n");
-	}
+	TRACE_MSG("init 3D noise...\n");
+	vnoise3d_init_file("noise3d_128.n", vec3ui(128, 128, 128));
+	TRACE_MSG("noise initiliazed\n");
 	
 	glViewport(0, 0, window_width, window_height);
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);

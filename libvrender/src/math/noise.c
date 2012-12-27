@@ -225,6 +225,87 @@ float value_noise_3d(vector3f v)
 }
 
 
+static float *noise3d_data = NULL;
+static vector3ui noise_size;
+
+void vnoise3d_init_file(const char *filename, vector3ui noise3d_size)
+{
+	IF_FAILED(filename);
+	
+	FILE *file = NULL;
+	
+	noise_size = noise3d_size;
+	
+	// существует файл с шумом ?...
+	if((file = fopen(filename, "rb")) == NULL) {
+		// ...файла нет, значит нужно создать
+		ERROR_MSG("cannot open file %s with noise; creating it\n", filename);
+		
+		noise3d_data = (float*) malloc(sizeof(float) * noise_size.x*noise_size.y*noise_size.z);
+		
+		file = fopen(filename, "w");
+		
+		for(unsigned k = 0; k < noise_size.z; k++) {
+			for(unsigned j = 0; j < noise_size.y; j++) {
+				for(unsigned i = 0; i < noise_size.x; i++) {
+					noise3d_data[i + j*noise_size.x + k*noise_size.x*noise_size.y] = 
+							value_noise_3d(vec3f(i, j ,k));
+				}
+			}
+		}
+		fwrite((void*) noise3d_data, sizeof(float), noise_size.x*noise_size.y*noise_size.z, file);
+		fclose(file);
+	} else {
+		// ...файл есть, читаем данные
+		noise3d_data = (float*) malloc(sizeof(float) * noise_size.x*noise_size.y*noise_size.z);
+		fread((void*) noise3d_data, sizeof(float), noise_size.x*noise_size.y*noise_size.z, file);
+		fclose(file);
+	}
+}
+
+// трилинейная интерполяция значений
+INLINE float trilerp(float v000, float v100, float v101, float v001,  
+			  float v010, float v110, float v111, float v011, vector3f t)
+{
+	float result = 0.0f;
+	
+	float c1x = math_cerp(v000, v100, t.x);
+	float c2x = math_cerp(v010, v110, t.x);
+	float c3x = math_cerp(v001, v101, t.x);
+	float c4x = math_cerp(v011, v111, t.x);
+	
+	float c1y = math_cerp(c1x, c2x, t.y);
+	float c2y = math_cerp(c3x, c4x, t.y);
+	
+	result = math_cerp(c1y, c2y, t.z);
+	
+	return result;
+}
+
+float vnoise3d_trilerp_file(vector3f p)
+{
+	#define _data(vx, vy, vz) noise3d_data[((vx) % noise_size.x) + ((vy) % noise_size.y)*noise_size.x + ((vz) % noise_size.z)*noise_size.x*noise_size.y]
+	
+	int int_px = (int) p.x;
+	int int_py = (int) p.y;
+	int int_pz = (int) p.z;
+	
+	float v000 = _data( int_px,     int_py,     int_pz );
+	float v100 = _data( int_px + 1, int_py,     int_pz );
+	float v101 = _data( int_px + 1, int_py,     int_pz + 1 );
+	float v001 = _data( int_px,     int_py,     int_pz + 1 );
+	
+	float v010 = _data( int_px,     int_py + 1, int_pz );
+	float v110 = _data( int_px + 1, int_py + 1, int_pz );
+	float v111 = _data( int_px + 1, int_py + 1, int_pz + 1 );
+	float v011 = _data( int_px,     int_py + 1, int_pz + 1 );
+	
+	vector3f t = vec3f( p.x-int_px, p.y-int_py, p.z-int_pz);
+	
+	return trilerp(v000, v100, v101, v001, v010, v110, v111, v011, t);
+}
+
+
 ////////////////////////////////// Perlin Noise - Шум Перлина
 
 INLINE static float fade(float t)

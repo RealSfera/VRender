@@ -36,6 +36,15 @@ float value_noise_1d(float x);
 float value_noise_2d(vector2f p);
 float value_noise_3d(vector3f p);
 
+
+/**
+ * Инициализировать численный шум из файла, если файл не существует, 
+ * то он будет создан и проинициализирован шумом 
+ */
+void vnoise3d_init_file(const char *filename, vector3ui noise_size);
+/* Трилинейная интерполяция значений шума из файла */
+float vnoise3d_trilerp_file(vector3f p);
+
 #ifdef __cplusplus
 }
 #endif
