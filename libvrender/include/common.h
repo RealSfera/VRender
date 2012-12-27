@@ -28,7 +28,7 @@
 #endif
 
 #ifdef __WIN32
-	#include "GL/gl.h"
+	#include <GL/gl.h>
     #include "GL/glext.h"
     #include "gl_funcs.h"
 #endif
