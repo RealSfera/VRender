@@ -42,39 +42,40 @@
 | Ubuntu |
  --------
 
-1. Устанавливаем Qt4 и QtOpenGL: `sudo apt-get install qt4-dev-tools libqt4-opengl-dev`
-2. Устанавливаем CMake: `sudo apt-get install cmake`
-3. Кладём исходник в любую папку, например, в `~/vrender` и переходим в неё: `cd ~/vrender/`
-4. Создаём папку, куда скомпилится libvrender: `mkdir libvrender-build` (лучше использовать имя `libvrender-build`, иначе нужно править `vrender-gui/vrender-gui.pro`) и переходим в неё: `cd libvrender-build`
-5. Создаём Makefile с помощью CMake: `cmake ../libvrender`
-6. Компилируем libvrender: `make`
-7. Переходим обратно в vrender: `cd ../`
-8. Теперь создаём папку для vrender-gui: `mkdir vrender-gui-build` и переходим в неё: `cd vrender-gui-build`
-9. Создаём Makefile уже с помощью qmake: `qmake ../vrender-gui`
-10. Компилируем vrender-gui: `make`
-11. Готово! Теперь в папке `vrender-gui-build` лежит программа `vrender-gui`. Приятного пользования!
+1. Устанавливаем Qt4 и QtOpenGL: sudo apt-get install qt4-dev-tools libqt4-opengl-dev
+2. Устанавливаем CMake: sudo apt-get install cmake
+3. Кладём исходник в любую папку, например, в ~/vrender и переходим в неё: cd ~/vrender/
+4. Создаём папку, куда скомпилится libvrender: mkdir libvrender-build (лучше использовать имя libvrender-build, иначе нужно править vrender-gui/vrender-gui.pro) и переходим в неё: cd libvrender-build
+5. Создаём Makefile с помощью CMake: cmake ../libvrender
+6. Компилируем libvrender: make
+7. Переходим обратно в vrender: cd ../
+8. Теперь создаём папку для vrender-gui: mkdir vrender-gui-build и переходим в неё: cd vrender-gui-build
+9. Создаём Makefile уже с помощью qmake: qmake ../vrender-gui
+10. Компилируем vrender-gui: make
+11. Готово! Теперь в папке vrender-gui-build лежит программа vrender-gui. Приятного пользования!
 
  ---------
 | Windows |
  ---------
 
-1. Качаем Qt4 SDK c сайта Qt Project: http://qt-project.org/downloads
-2. Устанавливаем Qt4 SDK
-3. Кладём исходник в любую папку, например, в `C:/vrender/`
-4. Запускаем QtCreator
-5. В QtCreator открываем файл как проект: `C:/vrender/libvrender/CMakeLists.txt` (Файл - Открыть файл или проект...)
-6. Откроется мастер, выбираем каталог сборки libvrender-build: `C:/vrender/libvrender-build` (папку нужно создать) и жмём Далее
-7. Выбираем генератор: `Генератор для MinGW (Mingw as a GCC for Windows targets)`, жмём Запуск CMake и затем Завершить
-8. Открываем файл как проект: `C:/vrender/vrender-gui/vrender-gui.pro`, в появившемся меню жмём Завершить
-9. Заходим во вкладку Проекты, сверху выбираем vrender-gui, и потом Зависимости, здесь выбираем `vrender`
-10. Жмём на значок компьютера и выбираем сборку Релиз (также должен быть установлен запуск vrender-gui)
-11. Жмём правой кнопкой мыши на проект vrender-gui и выбираем Пересобрать проект
-12. После сборки, жмём на зелёную стрелку Запустить
-13. Готово! Приятного пользования!
+1. Качаем Qt4 SDK: http://www.developer.nokia.com/Develop/Qt/Tools/
+2. Качаем CMake: http://www.cmake.org/cmake/resources/software.html (Win32 Installer)
+3. Устанавливаем CMake и Qt4 SDK
+4. Кладём исходник в любую папку, например, в C:/vrender/
+5. Запускаем Qt Creator
+6. Заходим в Инструменты -> Параметры... -> Сборка и Запуск -> CMake и указываем путь к cmake.exe (например, C:\Program Files\CMake 2.8\bin\cmake.exe)
+7. В Qt Creator открываем файл как проект: C:/vrender/libvrender/CMakeLists.txt (Файл - Открыть файл или проект...)
+8. Откроется мастер, выбираем каталог сборки libvrender-build: C:/vrender/libvrender-build (папку нужно создать) и жмём Далее
+9. Выбираем генератор: Генератор для MinGW (Mingw as a GCC for Windows targets), жмём Запуск CMake и затем Завершить
+10. Открываем файл как проект: C:/vrender/vrender-gui/vrender-gui.pro, в появившемся меню жмём Завершить
+11. Заходим во вкладку Проекты, сверху выбираем vrender-gui, и потом Зависимости, здесь выбираем vrender
+12. Жмём на значок компьютера и выбираем сборку Релиз (также должен быть установлен запуск vrender-gui)
+13. Жмём правой кнопкой мыши на проект vrender-gui и выбираем Пересобрать проект
+14. После сборки, жмём на зелёную стрелку Запустить
+15. Готово! Приятного пользования!
 
 ######################
 # Известные проблемы #
 ######################
 
-1. Крэш при построении в debug версии в Windows
-2. Не отображается текст ожидания (в MessageBox) при построении в Ubuntu
+1. Не отображается текст ожидания (в MessageBox) при построении в Ubuntu
