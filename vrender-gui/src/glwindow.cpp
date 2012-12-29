@@ -34,6 +34,24 @@ GLWindow::GLWindow(QWidget *parent) :
 	// ...и устанавливаем
 	setFormat(gl_format);
 	
+	// устанавливаем параметры по-умолчанию
+    is_multithreading = false;
+    isolevel = 30.0f; isolevel_begin = 0.0f; isolevel_end = 30.0f;
+    isolevel_step = 0.01f; isolevel_is_animate = 0;
+    camera_step = 0.2f; camera_move_speed = 15.0f; camera_fov = 16.0f;
+
+    material_color = vec3f(0.5f, 0.5f, 0.5f);
+    light_color = vec3f(1.0f, 1.0f, 1.0f);
+    light_spec_color = vec3f(1.0f, 1.0f, 1.0f);
+    material_shininess = 30.0f; coef_gamma = 2.2f; coef_ambient = 0.5f;
+    coef_diffuse = 1.0f; coef_specular = 1.0f;
+
+    volume_size = vec3ui(128, 128, 128); grid_size = vec3ui(32, 32, 32);
+
+    light_angle = 0.0f; light_rot_step = 0.01f;
+    light_is_animate = 0;
+	
+	// устанавливаем фокус для окна OpenGL
 	setFocusPolicy(Qt::StrongFocus);
 	
 	// запкскаем основной таймер

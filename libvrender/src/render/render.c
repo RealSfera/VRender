@@ -369,7 +369,7 @@ void render_set_volume_parameters(vector3ui volume_size_v, vector3ui grid_size_v
 	
 	volume = (float*) malloc(sizeof(float) * volume_size.x*volume_size.y*volume_size.z);
 
-	if(num_threads > 1) {
+	if(num_threads >= 2) {
 		thread_t *threads = (thread_t*) malloc(sizeof(thread_t) * num_threads);
 		volume_gen_t *func_args = (volume_gen_t*) malloc(sizeof(volume_gen_t) * num_threads);
 		
