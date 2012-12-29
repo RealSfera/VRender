@@ -84,6 +84,11 @@ SINLINE float math_cerp(float a, float b, float t)
 	
 	return a * (1.0f - f) + b * f;
 }
+
+SINLINE float math_floorf(float a)
+{
+	return floorf(a);
+}
 	
 #ifdef __cplusplus
 }

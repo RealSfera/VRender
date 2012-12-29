@@ -256,9 +256,13 @@ void vnoise3d_init_file(const char *filename, vector3ui noise3d_size)
 		fwrite((void*) noise3d_data, sizeof(float), noise_size.x*noise_size.y*noise_size.z, file);
 		fclose(file);
 	} else {
+		unsigned size = noise3d_size.x*noise3d_size.y*noise3d_size.z;
 		// ...файл есть, читаем данные
-		noise3d_data = (float*) malloc(sizeof(float) * noise_size.x*noise_size.y*noise_size.z);
-		fread((void*) noise3d_data, sizeof(float), noise_size.x*noise_size.y*noise_size.z, file);
+		noise3d_data = (float*) malloc(sizeof(float) * size);
+		unsigned read_bytes = fread((void*) noise3d_data, sizeof(float), size, file);
+		if(read_bytes*sizeof(float) != size) {
+			ERROR_MSG("cannot read 3d noise data; file = %s", filename);
+		}
 		fclose(file);
 	}
 }
@@ -308,9 +312,26 @@ float vnoise3d_trilerp_file(vector3f p)
 
 ////////////////////////////////// Perlin Noise - Шум Перлина
 
+static int p[512];
+static int permutation[] = 
+	{
+		151, 160, 137, 91, 90, 15, 131, 13, 201, 95, 96, 53, 194, 233, 7, 225, 140, 36, 103, 30, 69, 
+		142, 8, 99, 37, 240, 21, 10, 23, 190,  6, 148, 247, 120, 234, 75, 0, 26, 197, 62, 94, 252, 219, 
+		203, 117, 35, 11, 32, 57, 177, 33, 88, 237, 149, 56, 87, 174, 20, 125, 136, 171, 168, 68, 175, 
+		74, 165, 71, 134, 139, 48, 27, 166, 77, 146, 158, 231, 83, 111, 229, 122, 60, 211, 133, 230, 220, 
+		105, 92, 41, 55, 46, 245, 40, 244, 102, 143, 54,  65, 25, 63, 161,  1, 216, 80, 73, 209, 76, 132, 
+		187, 208,  89, 18, 169, 200, 196, 135, 130, 116, 188, 159, 86, 164, 100, 109, 198, 173, 186,  3, 
+		64, 52, 217, 226, 250, 124, 123, 5, 202, 38, 147, 118, 126, 255, 82, 85, 212, 207, 206, 59, 227, 
+		47, 16, 58, 17, 182, 189, 28, 42, 223, 183, 170, 213, 119, 248, 152,  2, 44, 154, 163,  70, 221, 
+		153, 101, 155, 167,  43, 172, 9, 129, 22, 39, 253,  19, 98, 108, 110, 79, 113, 224, 232, 178, 185, 
+		112, 104, 218, 246, 97, 228, 251, 34, 242, 193, 238, 210, 144, 12, 191, 179, 162, 241,  81, 51, 145, 
+		235, 249, 14, 239, 107, 49, 192, 214,  31, 181, 199, 106, 157, 184,  84, 204, 176, 115, 121, 50, 45, 
+		127,  4, 150, 254, 138, 236, 205, 93, 222, 114, 67, 29, 24, 72, 243, 141, 128, 195, 78, 66, 215, 61, 156, 180
+   };
+
 INLINE static float fade(float t)
 {
-	return t * t * t * (t * (t * 6 - 15) +  10);
+	return t * t * t * (t * (t * 6.0f - 15.0f) +  10.0f);
 }
 
 INLINE static float grad(int hash, vector3f p)
@@ -320,6 +341,13 @@ INLINE static float grad(int hash, vector3f p)
 	float v = h < 4 ? p.y : h == 12 || h == 14 ? p.x : p.z;
 	
 	return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v);
+}
+
+void perlin_noise_init(void)
+{
+	for(int i = 0; i < 256; i++) {
+		p[256 + i] = p[i] = permutation[i];
+	}
 }
 
 float perlin_noise_1d(float x)
@@ -332,7 +360,29 @@ float perlin_noise_2d(vector2f p)
 	return 0.0f;
 }
 
-float perlin_noise_3d(vector3f p)
+float perlin_noise_3d(vector3f pos)
 {
-	return 0.0f;
+	int x = (int) math_floorf(pos.x) & 255;
+	int y = (int) math_floorf(pos.y) & 255;
+	int z = (int) math_floorf(pos.z) & 255;
+	
+	pos.x -= math_floorf(pos.x);
+	pos.y -= math_floorf(pos.y);
+	pos.z -= math_floorf(pos.z);
+	
+	float u = fade(x), v = fade(y), w = fade(z);
+	
+	int A = p[x] + y, AA = p[A] + z, AB = p[A+1] + z;
+	int B = p[x+1] + y, BA = p[B] + z, BB = p[B+1] + z;
+	
+	float result = math_lerp(w, math_lerp(v, math_lerp(u, grad(p[AA], vec3f(x, y, z)), 
+										   grad(p[BA], vec3f(x-1.0f, y, z))),
+						 math_lerp(u, grad(p[AB], vec3f(x, y-1.0f, z)),
+										   grad(p[BB], vec3f(x-1.0f, y-1.0f, z)))),
+						 math_lerp(v, math_lerp(u, grad(p[AA+1], vec3f(x, y, z-1.0f)), 
+										   grad(p[BA+1], vec3f(x-1.0f, y, z-1.0f))),
+						 math_lerp(u, grad(p[AB+1], vec3f(x, y-1.0f, z-1.0f)),
+									       grad(p[BB+1], vec3f(x-1.0f, y-1.0f, z-1.0f)))));
+			
+	return result;
 }

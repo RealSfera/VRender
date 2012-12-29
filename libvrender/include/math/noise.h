@@ -29,7 +29,7 @@ extern "C" {
 /* Классический Шум Перлина */
 //float perlin_noise_1d(float x);
 //float perlin_noise_2d(vector2f p);
-//float perlin_noise_3d(vector3f p);
+float perlin_noise_3d(vector3f p);
 
 /* Численный шум */
 float value_noise_1d(float x);
@@ -42,7 +42,8 @@ float value_noise_3d(vector3f p);
  * то он будет создан и проинициализирован шумом 
  */
 void vnoise3d_init_file(const char *filename, vector3ui noise_size);
-/* Трилинейная интерполяция значений шума из файла */
+
+/* Трилинейная интерполяция значений численного шума из файла */
 float vnoise3d_trilerp_file(vector3f p);
 
 #ifdef __cplusplus
