@@ -25,6 +25,9 @@ static int input_kb_keys_state[MAX_KB_KEYS];
 static int input_mouse_btns_state[MAX_MOUSE_BUTTONS];
 
 static int current_mouse_x = 0, current_mouse_y = 0;
+static float current_wheel_rot = 0.0f;
+
+static unsigned wheel_limit_from = 0, wheel_limit_to = 0;
 
 static int init = 0;
 
@@ -73,6 +76,19 @@ void input_get_mouse_position(int *mouse_x, int *mouse_y)
 		*mouse_x = current_mouse_x;
 	if(mouse_y)
 		*mouse_y = current_mouse_y;
+}
+
+float input_get_wheel_rot(void)
+{
+	return current_wheel_rot;
+}
+
+void input_set_wheel_limits(unsigned from, unsigned to)
+{
+	wheel_limit_from = from;
+	wheel_limit_to = to;
+	
+	current_wheel_rot = (from+to) / 2.0f;
 }
 
 void input_event_on_keypress(unsigned key)
@@ -131,4 +147,16 @@ void input_event_on_mouse_motion(int mouse_x, int mouse_y)
 	
 	current_mouse_x = mouse_x;
 	current_mouse_y = mouse_y;
+}
+
+void input_event_on_mouse_wheel(float steps)
+{
+	IF_FAILED(init);
+	
+	current_wheel_rot += steps;
+	
+	if(current_wheel_rot > wheel_limit_to)
+		current_wheel_rot = wheel_limit_to;
+	else if(current_wheel_rot < wheel_limit_from)
+		current_wheel_rot = wheel_limit_from;
 }

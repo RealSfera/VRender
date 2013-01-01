@@ -49,33 +49,29 @@ set(HEADERS
 		  ${INCLUDEDIR}/utils.h
           ${INCLUDEDIR}/parser.h
           ${INCLUDEDIR}/marching_cubes.h 
-          ${INCLUDEDIR}/thread.h
           ${INCLUDEDIR}/main_shader.h )
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL Linux)
 	#set(LIBRARIES m GL)
     #add_definitions(-D__linux)
 
-    set(SOURCES ${SOURCES} ${SRCDIR}/threads/thread_linux.c )
-
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL Windows)
 	#set(LIBRARIES m opengl32)
 	#add_definitions(-D__win32)
 
-    set(SOURCES ${SOURCES} ${SRCDIR}/threads/thread_win32.c
-                           ${SRCDIR}/gl_funcs.c )
+    set(SOURCES ${SOURCES} ${SRCDIR}/gl_funcs.c )
     set(HEADERS ${HEADERS} ${INCLUDEDIR}/gl_funcs.h )
 
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCC)
-	set(EXTRA_C_FLAGS "-std=gnu99 -g -fgnu89-inline -march=i686 -funroll-loops -msse -finline-functions -O2 -Wall")
+	set(EXTRA_C_FLAGS "-std=gnu99 -fopenmp -g -fgnu89-inline -march=i686 -funroll-loops -msse -finline-functions -O2 -Wall")
 elseif(CMAKE_C_COMPILER_ID STREQUAL "Clang")
 	set(EXTRA_C_FLAGS "-std=gnu99 -g -fgnu89-inline -march=i686 -funroll-loops -msse -finline-functions -O2 -Wall")
 elseif(MSVC)
 	source_group ("Header Files" FILES ${HEADERS})
 	source_group ("Source Files" FILES ${SOURCES})
-	set(EXTRA_C_FLAGS "/W4")
+	set(EXTRA_C_FLAGS "/W4 /openmp")
 else()
 	message(FATAL_ERROR "-- Unknown compiler " ${CMAKE_C_COMPILER})
 endif()

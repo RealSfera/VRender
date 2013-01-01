@@ -20,7 +20,9 @@
 #include "ui_mainwindow.h"
 #include "glwindow.h"
 
-static const QString main_help = QString::fromUtf8("<h2><center>Основы языка построения</center></h2>" \
+#define VERSION STRINGIFY(0.8.5)
+
+static const QString build_help_text = QString::fromUtf8("<h2><center>Основы языка построения</center></h2>" \
 								 "<p>	Данный язык был специально разработан для упрощения его изучения и простоты работы с ним. За основу были взяты выражения из языка программирования C, а также одна конструкция из Фортрана и несколько специализированных (которые не встречаются в других языках и выражениях).</p>" \
 												   "<p>	Он специально был построен, чтобы максимально быть похожим на обычные математические выражения.</p>" \
 												   "<p>	В языке присутсвуют: выражения, переменные, функции, условия, циклы (сумма)</p>" \
@@ -86,8 +88,9 @@ static const QString main_help = QString::fromUtf8("<h2><center>Основы я�
 												   "<p>Так как данный язык создавался в первую очередь для построения скалярных полей, то в нём предусмотрены специальные переменные, которым в начале вычисления присваиваются значения. Переменные x, y, z являются встроенными и их значение равно координатам вычисляемой точки внутри скалярного поля. Их значения изменяются от 0 до (размер скалярного поля - 1). Эти переменные можно изменять, но это ни на что, не повлияет.</p>" \
 												   "<p>Переменная d является самой основной, так как присвоенное ей значение становится значением в соотвествующей точке скалярного поля, т. е. она является выходной переменной. По-умолчанию она равна 0.</p>" \
 												   "<p></p>" \
-												   "<p>	На этом пока всё. Данный язык ещё находится в активной разработке и поэтому в нём могут ещё интересные элементы=)</p>" \
 												   "<p></p>");
+
+static const QString program_help_text = QString::fromUtf8("<h2><center>Справка по программе VRender "VERSION"</center></h2>");
 
 MainWindow::MainWindow(QWidget *parent) :
 	QMainWindow(parent),
@@ -95,12 +98,26 @@ MainWindow::MainWindow(QWidget *parent) :
 {
 	ui->setupUi(this);
 	
-	help_dialog = new HelpDialog(this);
-	help_dialog->set_html_text(main_help);
+	build_help_dialog = new HelpDialog(this);
+	build_help_dialog->setWindowTitle(QString::fromUtf8("Справка по построению"));
+	build_help_dialog->set_html_text(build_help_text);
+	
+	program_help_dialog = new HelpDialog(this);
+	program_help_dialog->setWindowTitle(QString::fromUtf8("Справка по программе"));
+	program_help_dialog->set_html_text(program_help_text);
 	
 	main_gl_window = new GLWindow(this);
 	
 	antialiasing_checked = true;
+
+	if(QThread::idealThreadCount() >= 2) {
+		ui->multithreading_box->setChecked(true);
+		ui->threads_num_box->setValue(QThread::idealThreadCount());
+	}
+
+	ui->grid_size_value_x->setMaximum(ui->volume_size_value_x->value());
+	ui->grid_size_value_y->setMaximum(ui->volume_size_value_y->value());
+	ui->grid_size_value_z->setMaximum(ui->volume_size_value_z->value());
 
 	ui->render_farme_layout->addWidget(main_gl_window);
 
@@ -126,15 +143,15 @@ void MainWindow::timerEvent(QTimerEvent *)
 	main_gl_window->set_diffuse_factor(ui->coef_diffuse->value());
 	main_gl_window->set_specular_factor(ui->coef_specular->value());
 	main_gl_window->set_material_shininess(ui->spec_shininess->value());
-	main_gl_window->set_material_color(vec3f( ui->mat_color_red->value()/255.0f, ui->mat_color_green->value()/255.0f, ui->mat_color_blue->value()/255.0f ));
+	main_gl_window->set_material_color(vec3f( ui->mat_color_red->value()/255.0f, ui->mat_color_green->value()/255.0f, ui->mat_color_blue->value()/255.0f ),
+									   vec3f( ui->mat_back_color_red->value()/255.0f, ui->mat_back_color_green->value()/255.0f, ui->mat_back_color_blue->value()/255.0f ));
 	main_gl_window->set_light_color(vec3f( ui->light_color_red->value()/255.0f, ui->light_color_green->value()/255.0f, ui->light_color_blue->value()/255.0f ));
 	main_gl_window->set_light_spec_color(vec3f( ui->spec_color_red->value()/255.0f, ui->spec_color_green->value()/255.0f, ui->spec_color_blue->value()/255.0f ));
 	main_gl_window->set_light_rot_step(ui->light_rot_angle_step->value());
 	
 	// устанавливаем параметры камеры
-	main_gl_window->set_camera_step(ui->camera_step_spin->value());
-	main_gl_window->set_camera_move_speed(ui->camera_move_speed_spin->value());
-	main_gl_window->set_camera_fov(ui->camera_fov_spin->value());
+	//main_gl_window->set_camera_step(ui->camera_step_spin->value());
+	//main_gl_window->set_camera_move_speed(ui->camera_move_speed_spin->value());
 	
 	// устанавливаем изо-уровень
 	main_gl_window->set_isolevel_begin(ui->isolevel_value_begin->value());
@@ -156,8 +173,13 @@ void MainWindow::on_build_start_clicked()
 		builder_msg->show();
 		qApp->processEvents();
 		
-		main_gl_window->set_volume_parameters(vec3ui(ui->volume_size_value_x->value(), ui->volume_size_value_y->value(), ui->volume_size_value_z->value()), 
-											  vec3ui(ui->grid_size_value_x->value(), ui->grid_size_value_y->value(), ui->grid_size_value_z->value()) );
+		main_gl_window->set_grid_size(vec3ui(ui->grid_size_value_x->value(), ui->grid_size_value_y->value(), ui->grid_size_value_z->value()));
+		main_gl_window->set_volume_size(vec3ui(ui->volume_size_value_x->value(), ui->volume_size_value_y->value(), ui->volume_size_value_z->value()));
+
+		ui->grid_size_value_x->setMaximum(ui->volume_size_value_x->value());
+		ui->grid_size_value_y->setMaximum(ui->volume_size_value_y->value());
+		ui->grid_size_value_z->setMaximum(ui->volume_size_value_z->value());
+
 		if( main_gl_window->set_function_text(ui->build_function_text->toPlainText().toAscii().data()) )
 			main_gl_window->begin_generation();
 		
@@ -172,8 +194,8 @@ void MainWindow::on_about_program_action_triggered()
 {
     
 	QMessageBox::information(this, QString::fromUtf8("О программе..."), 
-								   QString::fromUtf8("VRender - это программа для визуализации скалярных полей, построенных при помощи задаваемой функции\n\n" \
-													 "Версия: 0.8\n" \
+								   QString::fromUtf8("VRender - это программа для построения и визуализации скалярных полей\n\n" \
+													 "Версия: "VERSION"\n" \
 													 "Автор: Панов 'Sfera' Евгений\n\n" \
 													 "Лицензия: GPL v3 (см. файл LICENSE)\n"));
 	
@@ -225,7 +247,7 @@ void MainWindow::on_isolevel_value_valueChanged(double)
 
 void MainWindow::on_build_help_action_triggered()
 {
-    help_dialog->show();
+    build_help_dialog->show();
 }
 
 void MainWindow::on_antialiasing_box_clicked()
@@ -249,5 +271,148 @@ void MainWindow::on_antialiasing_box_clicked()
 
 void MainWindow::on_multithreading_box_toggled(bool checked)
 {
-	main_gl_window->set_number_of_threads( (checked) ? 2 : 1 );
+	ui->threads_num_box->setEnabled(checked);
+	main_gl_window->set_number_of_threads( checked ? ui->threads_num_box->value() : 1 );
+}
+
+// Вызов диалога выбора цвета и установка выбранного цвета
+
+void MainWindow::on_material_front_color_button_clicked()
+{
+	QColorDialog color_dialog(
+				QColor::fromRgb(ui->mat_color_red->value(),
+								ui->mat_color_green->value(),
+								ui->mat_color_blue->value()), this);
+	
+	if(color_dialog.exec() == QDialog::Accepted) {
+		
+		QColor color = color_dialog.selectedColor();
+		
+		ui->mat_color_red->setValue(color.red());
+		ui->mat_color_green->setValue(color.green());
+		ui->mat_color_blue->setValue(color.blue());
+		
+		main_gl_window->set_material_color(vec3f( color.red()/255.0f, color.green()/255.0f, color.blue()/255.0f ),
+										   vec3f( ui->mat_back_color_red->value()/255.0f, ui->mat_back_color_green->value()/255.0f, ui->mat_back_color_blue->value()/255.0f ));
+	}
+}
+
+void MainWindow::on_light_color_button_clicked()
+{
+	QColorDialog color_dialog(
+				QColor::fromRgb(ui->light_color_red->value(),
+								ui->light_color_green->value(),
+								ui->light_color_blue->value()), this);
+	
+	if(color_dialog.exec() == QDialog::Accepted) {
+		
+		QColor color = color_dialog.selectedColor();
+		
+		ui->light_color_red->setValue(color.red());
+		ui->light_color_green->setValue(color.green());
+		ui->light_color_blue->setValue(color.blue());
+		
+		main_gl_window->set_light_color(vec3f( color.red()/255.0f, color.green()/255.0f, color.blue()/255.0f ));  
+	}
+}
+
+void MainWindow::on_specular_color_button_clicked()
+{
+	QColorDialog color_dialog(
+				QColor::fromRgb(ui->spec_color_red->value(),
+								ui->spec_color_green->value(),
+								ui->spec_color_blue->value()), this);
+	
+	if(color_dialog.exec() == QDialog::Accepted) {
+		
+		QColor color = color_dialog.selectedColor();
+		
+		ui->spec_color_red->setValue(color.red());
+		ui->spec_color_green->setValue(color.green());
+		ui->spec_color_blue->setValue(color.blue());
+		
+		main_gl_window->set_light_spec_color(vec3f( color.red()/255.0f, color.green()/255.0f, color.blue()/255.0f ));  
+	}
+}
+
+void MainWindow::on_material_back_color_button_clicked()
+{
+	QColorDialog color_dialog(
+				QColor::fromRgb(ui->mat_back_color_red->value(),
+								ui->mat_back_color_green->value(),
+								ui->mat_back_color_blue->value()), this);
+	
+	if(color_dialog.exec() == QDialog::Accepted) {
+		
+		QColor color = color_dialog.selectedColor();
+		
+		ui->mat_back_color_red->setValue(color.red());
+		ui->mat_back_color_green->setValue(color.green());
+		ui->mat_back_color_blue->setValue(color.blue());
+		
+		main_gl_window->set_material_color(vec3f( ui->mat_color_red->value()/255.0f, ui->mat_color_green->value()/255.0f, ui->mat_color_blue->value()/255.0f ), 
+										   vec3f( color.red()/255.0f, color.green()/255.0f, color.blue()/255.0f ));  
+	}
+}
+
+void MainWindow::on_threads_num_box_valueChanged(int)
+{
+	main_gl_window->set_number_of_threads( ui->multithreading_box->isChecked() ? ui->threads_num_box->value() : 1 );
+}
+
+
+void MainWindow::on_grid_size_value_x_valueChanged(int)
+{
+	main_gl_window->set_grid_size(vec3ui(ui->grid_size_value_x->value(), ui->grid_size_value_y->value(), ui->grid_size_value_z->value()));
+}
+void MainWindow::on_grid_size_value_y_valueChanged(int)
+{
+	main_gl_window->set_grid_size(vec3ui(ui->grid_size_value_x->value(), ui->grid_size_value_y->value(), ui->grid_size_value_z->value()));
+}
+void MainWindow::on_grid_size_value_z_valueChanged(int)
+{
+	main_gl_window->set_grid_size(vec3ui(ui->grid_size_value_x->value(), ui->grid_size_value_y->value(), ui->grid_size_value_z->value()));
+}
+
+void MainWindow::on_program_help_action_triggered()
+{
+    program_help_dialog->show();
+}
+
+void MainWindow::on_obj_export_action_triggered()
+{
+	QString filename = QFileDialog::getSaveFileName(this, 
+													QString::fromUtf8("Экспорт в Wavefront (.obj)"), 
+													"", 
+													QString::fromUtf8("Wavefront (*.obj)"));
+	
+	if(filename != "") {
+		char *buffer = NULL;
+		
+		if(!render_export_obj(&buffer)) {
+			QMessageBox::critical(this, 
+								  QString::fromUtf8("Ошибка экспорта"), 
+								  QString::fromUtf8("Ошибка экспортировании данных текущего объекта!"));
+			if(buffer)
+				free(buffer);
+			return;
+		}
+		
+		QFile file(filename);
+		
+		if(!file.open(QIODevice::WriteOnly)) {
+			QMessageBox::critical(this, 
+								  QString::fromUtf8("Ошибка экспорта"), 
+								  QString::fromUtf8("Ошибка при открытии файла для сохранения!"));
+			free(buffer);
+			return;
+		}
+				
+		QTextStream text_stream(&file);
+		text_stream << buffer;
+		text_stream.flush();
+		file.close();
+		
+		free(buffer);
+	}
 }

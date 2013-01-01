@@ -32,7 +32,7 @@ void camera_init(camera_t *cam, vector3f pos, vector3f up, vector3f target)
 	TRACE_MSG("init camera\n");	
 	
 	// настраиваем стандартные параметры камеры
-	cam->position = pos;
+	cam->target_position = cam->position = pos;
 	cam->fovy = 45.0f;
 	cam->aspect = 1.0f;
 	cam->target = vec3f_norm(target);

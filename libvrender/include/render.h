@@ -43,28 +43,31 @@ void render_set_isolevel_animation(int animate);
 void render_set_isolevel_begin_anim(float level);
 void render_set_isolevel_end_anim(float level);
 void render_set_isolevel_step_anim(float step);
-
 void render_set_light_color(vector3f color);
 void render_set_light_spec_color(vector3f color);
 void render_set_light_angle(float angle_pos);
 void render_set_light_animation(int animate);
 void render_set_light_rot_step(float step);
-
-void render_set_volume_parameters(vector3ui volume_size, vector3ui grid_size);
-void render_set_material_color(vector3f color);
+void render_set_volume_size(vector3ui volume_size);
+void render_set_grid_size(vector3ui grid_size);
+void render_set_material_color(vector3f front_color, vector3f back_color);
 void render_set_material_shininess(float shininess);
 void render_set_ambient_factor(float ambient);
 void render_set_diffuse_factor(float diffuse);
 void render_set_specular_factor(float specular);
 void render_set_gamma_factor(float gamma);
-
 void render_set_camera_step(float step);
 void render_set_camera_move_speed(float speed);
 void render_set_camera_fov(float fov);
-
 void render_set_number_of_threads(unsigned num);
-
 int render_set_function_text(const char *function_text);
+
+/** 
+ * Экспортирует текущий объект (с текущим изо-уровнем) в buffer в формате wavefront (.obj)
+ * Выделяет память под данные и указатель на них присваивает buffer, поэтому требуется освобождение
+ * выделенный памяти (free) в вызывающей функции
+ */
+int render_export_obj(char **buffer);
 
 /* Обновить скалярное поле */
 void render_update_volume_tex(void);
