@@ -11,7 +11,7 @@ TEMPLATE = app
 INCLUDEPATH += include ../libvrender/include/
 LIBS += -L../libvrender-build/ -lvrender
 
-win32: LIBS += -lopengl32 -lgomp -Bstatic -lpthread -Bstatic
+win32: LIBS += -lopengl32 -static -lgomp -lpthread
 unix:  LIBS += -lGL -lgomp -Bstatic
 
 PRE_TARGETDEPS += ../libvrender-build/libvrender.a
