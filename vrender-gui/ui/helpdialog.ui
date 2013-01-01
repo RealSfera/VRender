@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Справка по построению</string>
+   <string>Справка</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="1" column="0">

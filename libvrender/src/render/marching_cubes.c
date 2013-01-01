@@ -20,7 +20,6 @@
 #include "marching_cubes.h"
 #include "math/dmath.h"
 #include <string.h>
-#include "thread.h"
 
 // таблица граней
 int mc_edge_table[256] = {
@@ -316,6 +315,27 @@ char mc_tri_table[256][16] =
 	{0, 3, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
 	{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}};
 
+vector3f marching_cubes_calculate_normal(const float *volume, vector3ui size, 
+										 vector3f delta, vector3f position, 
+										 float (*function)(vector3f pos))
+{
+	vector3f result;
+	
+#define _function(v) (*function)(vec3f_mult(v, vec3ui_to_vec3f(size)))
+	
+	// вычисляем градиент в точке position (фактически это вычисление частных производных)
+	result.x = (_function(vec3f(position.x + delta.x, position.y, position.z)) - 
+				_function(vec3f(position.x - delta.x, position.y, position.z))) / 2.0f*delta.x;
+	result.y = (_function(vec3f(position.x, position.y + delta.y, position.z)) - 
+				_function(vec3f(position.x, position.y - delta.y, position.z))) / 2.0f*delta.y;
+	result.z = (_function(vec3f(position.x, position.y, position.z + delta.z)) - 
+				_function(vec3f(position.x, position.y, position.z - delta.z))) / 2.0f*delta.z;
+			   
+#undef function
+	
+	// нормализуем градиент и получаем единичную нормаль
+	return vec3f_norm(result);
+}
 
 INLINE static vector3f vertices_lerp(float isolevel, vector3f v1, float value1, vector3f v2, float value2)
 {	
@@ -446,7 +466,7 @@ int marching_cubes_create(const float *volume, vector3ui volume_size, vector3ui 
 				vector3ui value_offset = vec3ui_mult(vec3ui(i, j, k), value_step);
 				
 				// создаем ячейку с соотвествующими вершинами и изо-значениями
-#define VOLUME(v) volume[(v).x + (v).y*volume_size.x + (v).z*volume_size.x*volume_size.y]
+				#define VOLUME(v) volume[(v).x + (v).y*volume_size.x + (v).z*volume_size.x*volume_size.y]
 				
 				cell.vertices_positions[0] = pos_offset;
 				cell.vertices_values[0]    = VOLUME(value_offset);
@@ -473,7 +493,7 @@ int marching_cubes_create(const float *volume, vector3ui volume_size, vector3ui 
 				cell.vertices_positions[7] = vec3f_add(pos_offset, vec3f(0.0f, pos_step.y, pos_step.z));
 				cell.vertices_values[7]    = VOLUME(vec3ui_add(value_offset, vec3ui(0, value_step.y, value_step.z)));
 				
-#undef VOLUME
+				#undef VOLUME
 				
 				// полигонизируем ячейку и получаем набор из вершин и индексов
 				int result = marching_cubes_polygonise(cell, isolevel, vertices, &nv, triangles, &nt);
@@ -535,7 +555,8 @@ int marching_cubes_create(const float *volume, vector3ui volume_size, vector3ui 
 
 int marching_cubes_create_vbos(const float *volume, vector3ui volume_size, 
 							  vector3ui grid_size, float isolevel,
-							  GLuint vertex_vbo, GLuint index_vbo)
+							  GLuint vertex_vbo, GLuint index_vbo, GLuint normal_vbo, 
+							  float (*function)(vector3f pos))
 {
 	int result = 0;
 	unsigned n_vertices = 0, n_triangles = 0;
@@ -561,11 +582,26 @@ int marching_cubes_create_vbos(const float *volume, vector3ui volume_size,
 	
 	// загружаем вершины
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vector3f) * n_vertices, (const GLvoid*) vertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vector3f) * n_vertices, (const GLvoid*) vertices, GL_DYNAMIC_DRAW);
 	
 	// загружаем индексы
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_vbo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(triangle_t) * n_triangles, (const GLvoid*) triangles, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(triangle_t) * n_triangles, (const GLvoid*) triangles, GL_DYNAMIC_DRAW);
+	
+	if(normal_vbo != 0) {
+		vector3f *normals = (vector3f*) malloc(sizeof(vector3f) * n_vertices);
+		vector3f delta = vec3f_div(vec3f(1.0f, 1.0f, 1.0f), vec3ui_to_vec3f(grid_size));
+		
+		glBindBuffer(GL_ARRAY_BUFFER, normal_vbo);
+		
+		for(unsigned i = 0; i < n_vertices; i++) {
+			normals[i] = marching_cubes_calculate_normal(volume, volume_size, delta, vertices[i], function);
+		}
+		
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vector3f) * n_vertices, (const GLvoid*) normals, GL_STATIC_DRAW);
+		
+		free(normals);
+	}
 	
 	free(triangles);
 	free(vertices);

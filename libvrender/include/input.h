@@ -66,12 +66,19 @@ int input_get_mousebtn_state(unsigned int key);
 /* Получить текущие координаты мыши */
 void input_get_mouse_position(int *mouse_x, int *mouse_y);
 
+/* Получить текущее вращение колёсика мыши */
+float input_get_wheel_rot(void);
+
+/* Установить предельные углы вращения колёсика */
+void input_set_wheel_limits(unsigned from, unsigned to);
+
 /* Различные события клавиатуры и мыши */
 void input_event_on_keypress(unsigned key);
 void input_event_on_keyreleased(unsigned key);
 void input_event_on_btnpress(unsigned key, int mouse_x, int mouse_y);
 void input_event_on_btnreleased(unsigned key, int mouse_x, int mouse_y);
 void input_event_on_mouse_motion(int mouse_x, int mouse_y);
+void input_event_on_mouse_wheel(float steps);
 
 #ifdef __cplusplus
 }

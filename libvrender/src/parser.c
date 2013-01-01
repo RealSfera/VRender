@@ -199,7 +199,11 @@ static float call_vnoise2(float x, float y)
 static float call_vnoise3(float x, float y, float z)
 {
 	//return value_noise_3d(vec3f(x, y, z));
-	//return vnoise3d_trilerp_file(vec3f(x, y, z));
+	return vnoise3d_trilerp_file(vec3f(x, y, z));
+}
+
+static float call_pnoise3(float x, float y, float z)
+{
 	return perlin_noise_3d(vec3f(x, y, z));
 }
 
@@ -318,6 +322,7 @@ static float_function3_t builtin_functions3[] =
 		{ 129, (func3_t) &call_length3 },
 
 		{ 134, (func3_t) &call_vnoise3 },
+	    { 135, (func3_t) &call_pnoise3 },
 		{0, 0}
 	};
 
@@ -379,6 +384,7 @@ static function_param_t builtin_functions_params[] =
 		{ 132, 1 },
 		{ 133, 2 },
 		{ 134, 3 },
+		{ 135, 3 },
 		{0, 0}
 	};
 
@@ -430,12 +436,13 @@ static identifier_t builtin_identifiers[] =
 		{FUNCTION, "vnoise1", 132},
 		{FUNCTION, "vnoise2", 133},
 		{FUNCTION, "vnoise3", 134},
+		{FUNCTION, "pnoise3", 135},
 		{0, "", 0}
 	};
 
 // последний глобальный индекс переменных
 static int last_var_global_id = 7;
-//static int last_func_global_id = 135;
+//static int last_func_global_id = 136;
 
 static void eval_expr(parser_t *p,float *value);
 static void eval_expr0(parser_t *p,float *value);
@@ -726,7 +733,7 @@ static float call_func(parser_t *p, int func_id)
 	return result;
 }
 
-// получить значение перемкнной
+// получить значение переменной
 static float get_var_value(parser_t *p, int global_id)
 {
 	int i = 0;

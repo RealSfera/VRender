@@ -52,10 +52,30 @@ class MainWindow : public QMainWindow
 		
 		void on_multithreading_box_toggled(bool checked);
 		
+		void on_material_front_color_button_clicked();
+		
+		void on_light_color_button_clicked();
+		
+		void on_specular_color_button_clicked();
+		
+		void on_material_back_color_button_clicked();
+		
+		void on_threads_num_box_valueChanged(int arg1);
+
+		void on_grid_size_value_x_valueChanged(int arg1);
+
+		void on_grid_size_value_y_valueChanged(int arg1);
+
+		void on_grid_size_value_z_valueChanged(int arg1);
+
+		void on_program_help_action_triggered();
+		
+		void on_obj_export_action_triggered();
+		
 	private:
 		Ui::MainWindow *ui;
 		GLWindow *main_gl_window;
-		HelpDialog *help_dialog;
+		HelpDialog *build_help_dialog, *program_help_dialog;
 		bool antialiasing_checked;
 		int timer_id;
 		

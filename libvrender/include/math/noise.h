@@ -27,6 +27,7 @@ extern "C" {
 #endif
 
 /* Классический Шум Перлина */
+void perlin_noise_init(void);
 //float perlin_noise_1d(float x);
 //float perlin_noise_2d(vector2f p);
 float perlin_noise_3d(vector3f p);

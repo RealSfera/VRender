@@ -119,6 +119,12 @@ void mat4_mult3(matrix4f out, matrix4f m1, matrix4f m2, matrix4f m3)
 	mat4_mult2(out, out, m3);
 }
 
+void mat3_mult3(matrix3f out, matrix3f m1, matrix3f m2, matrix3f m3)
+{
+	mat3_mult2(out, m1, m2);
+	mat3_mult2(out, out, m3);
+}
+
 void mat4_mult4(matrix4f out, matrix4f m1, matrix4f m2, matrix4f m3, matrix4f m4)
 {
 	mat4_mult3(out, m1, m2, m3);

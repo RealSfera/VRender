@@ -33,7 +33,27 @@ GLWindow::GLWindow(QWidget *parent) :
 	
 	// ...и устанавливаем
 	setFormat(gl_format);
+
+	// устанавливаем параметры по-умолчанию
+    is_multithreading = false;
+	threads_num = 1;
+    isolevel = 30.0f; isolevel_begin = 0.0f; isolevel_end = 30.0f;
+    isolevel_step = 0.01f; isolevel_is_animate = 0;
+    camera_step = 0.2f; camera_move_speed = 15.0f; camera_fov = 16.0f;
+
+    material_front_color = vec3f(0.5f, 0.5f, 0.5f);
+	material_back_color = vec3f(0.5f, 0.0f, 0.0f);
+    light_color = vec3f(1.0f, 1.0f, 1.0f);
+    light_spec_color = vec3f(1.0f, 1.0f, 1.0f);
+    material_shininess = 30.0f; coef_gamma = 2.2f; coef_ambient = 0.5f;
+    coef_diffuse = 1.0f; coef_specular = 1.0f;
+
+    volume_size = vec3ui(128, 128, 128); grid_size = vec3ui(40, 40, 40);
+
+    light_angle = 0.0f; light_rot_step = 0.01f;
+    light_is_animate = 0;
 	
+	// устанавливаем фокус для окна OpenGL
 	setFocusPolicy(Qt::StrongFocus);
 	
 	// запкскаем основной таймер
@@ -74,7 +94,7 @@ void GLWindow::update_options()
 	render_set_diffuse_factor(coef_diffuse);
 	render_set_specular_factor(coef_specular);
 	render_set_material_shininess(material_shininess);
-	render_set_material_color(material_color);
+	render_set_material_color(material_front_color, material_back_color);
 	render_set_light_color(light_color);
 	render_set_light_spec_color(light_spec_color);
 	render_set_isolevel_begin_anim(isolevel_begin);
@@ -83,8 +103,7 @@ void GLWindow::update_options()
 	render_set_light_rot_step(light_rot_step);
 	render_set_camera_step(camera_step);
 	render_set_camera_move_speed(camera_move_speed);
-	render_set_camera_fov(camera_fov);
-	render_set_number_of_threads( (is_multithreading) ? 2 : 1 );
+	render_set_number_of_threads( (is_multithreading) ? threads_num : 1 );
 }
 
 void GLWindow::paintGL()
@@ -269,6 +288,13 @@ void GLWindow::mouseMoveEvent(QMouseEvent *event)
 	input_event_on_mouse_motion(event->x(), event->y());
 }
 
+void GLWindow::wheelEvent(QWheelEvent *event)
+{
+	if(event->orientation() == Qt::Vertical)
+		input_event_on_mouse_wheel( (float) event->delta() / 20.0f);
+	event->accept();
+}
+
 bool GLWindow::set_function_text(const char* text)
 {
 	int error = 0;
@@ -317,15 +343,21 @@ void GLWindow::set_isolevel_end(float level)
 	isolevel_end = level;
 }
 
-void GLWindow::set_volume_parameters(vector3ui volume_size, vector3ui grid_size)
+void GLWindow::set_volume_size(vector3ui volume_size)
 {
 	this->volume_size = volume_size;
-	this->grid_size = grid_size;
 }
 
-void GLWindow::set_material_color(vector3f color)
+void GLWindow::set_grid_size(vector3ui grid_size)
 {
-	material_color = color;
+	this->grid_size = grid_size;
+	render_set_grid_size(grid_size);
+}
+
+void GLWindow::set_material_color(vector3f front_color, vector3f back_color)
+{
+	material_front_color = front_color;
+	material_back_color = back_color;
 }
 
 void GLWindow::set_light_color(vector3f color)
@@ -398,10 +430,13 @@ void GLWindow::set_number_of_threads(unsigned num)
 		is_multithreading = true;
 	else
 		is_multithreading = false;
+
+	threads_num = num;
 }
 
 void GLWindow::begin_generation()
 {
-	render_set_volume_parameters(volume_size, grid_size);
+	render_set_grid_size(grid_size);
+	render_set_volume_size(volume_size);
 	render_update_volume_tex();
 }

@@ -37,9 +37,6 @@ class GLWindow : public QGLWidget
 		
 		// настройки QtOpenGL
 		QGLFormat gl_format;
-		
-		// Включить многопоточность
-		bool is_multithreading;
 
 		// Опции рендеринга
 		
@@ -51,7 +48,7 @@ class GLWindow : public QGLWidget
 		float camera_step, camera_move_speed, camera_fov;
 		
 		// Настройки метериала и освещения
-		vector3f material_color, light_color, light_spec_color;
+		vector3f material_front_color, material_back_color, light_color, light_spec_color;
 		float material_shininess, coef_gamma, coef_ambient,
 			  coef_diffuse, coef_specular;
 		vector3ui volume_size, grid_size;
@@ -59,6 +56,12 @@ class GLWindow : public QGLWidget
 		// Настройки расположения источника света
 		float light_angle, light_rot_step;
 		bool light_is_animate;
+
+		// Количество потоков
+		unsigned threads_num;
+
+		// Включить многопоточность
+		bool is_multithreading;
 		
 	public:
 		GLWindow(QWidget *parent = 0);
@@ -74,8 +77,9 @@ class GLWindow : public QGLWidget
 		void set_isolevel_begin(float level);
 		void set_isolevel_end(float level);
 		void set_isolevel_step(float step);
-		void set_volume_parameters(vector3ui volume_size, vector3ui grid_size);
-		void set_material_color(vector3f color);
+		void set_volume_size(vector3ui volume_size);
+		void set_grid_size(vector3ui grid_size);
+		void set_material_color(vector3f front_color, vector3f back_color);
 		void set_light_color(vector3f color);
 		void set_light_spec_color(vector3f color);
 		void set_material_shininess(float shininess);
@@ -105,6 +109,7 @@ class GLWindow : public QGLWidget
 		void mouseMoveEvent(QMouseEvent *event);
 		void mousePressEvent(QMouseEvent *event);
 		void mouseReleaseEvent(QMouseEvent *event);
+		void wheelEvent(QWheelEvent *event);
 		void timerEvent(QTimerEvent *) {updateGL();}
 		
 };

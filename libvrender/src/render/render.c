@@ -27,7 +27,8 @@
 #include "input.h"
 #include "marching_cubes.h"
 #include "parser.h"
-#include "thread.h"
+#include "string.h"
+#include "omp.h"
 
 static int init = 0;
 
@@ -57,29 +58,29 @@ static unsigned int window_width = 640, window_height = 480;
 static float coef_ambient = 0.05f, coef_diffuse = 1.0f,
 			 coef_specular = 1.0f, coef_gamma = 2.2f,
 			 material_shininess = 30.0f;
-static vector3f material_color, light_color, light_spec_color;
+static vector3f material_front_color, material_back_color, light_color, light_spec_color;
 
 // файл шейдера
-shader_program_file_t pfile;
-shader_program_t program;
+static shader_program_file_t pfile;
+static shader_program_t program;
 
 // юниформы для шейдера
-GLint uniform_modelmat, uniform_viewmat, uniform_projectionmat, 
+static GLint uniform_modelmat, uniform_viewmat, uniform_projectionmat, 
 	  uniform_model_inv, uniform_light_pos, uniform_viewer_pos,
-	  uniform_volume_texture, uniform_volume_step, uniform_material_color,
+	  uniform_volume_texture, uniform_volume_step, uniform_material_front_color,
 	  uniform_light_color, uniform_light_spec_color, uniform_material_shininess,
 	  uniform_coef_ambient, uniform_coef_diffuse, uniform_coef_specular,
-	  uniform_coef_gamma;
+	  uniform_coef_gamma, uniform_material_back_color;
 
 // буферы с данными
-GLuint vbo[4], vao;
+static GLuint vbo[2], vao;
 
 // позиции источника света
 static vector3f light_position, new_light_position;
 
 // параметры камеры
-float camera_step = 0.2f, camera_move_speed = 15.0f, 
-	  camera_rotate_speed = 15.0f, camera_fov = 60.0f;
+static float camera_step = 0.2f, camera_move_speed = 15.0f, 
+	  camera_rotate_speed = 15.0f, camera_fov = 60.0f, wheel_rot = 60.0f;
 
 static matrix4f rotmat, modelmat, viewmat, projectionmat;
 static int disable_mouse = 0;
@@ -95,9 +96,7 @@ static int init_buffers(void);
 
 int init_shader(void)
 {
-	// открываем файл шейдера
-	//if(!shader_program_file_create(&pfile, "shader.sf"))
-	//	return 0;
+	// открываем файл шейдера из буфера
 	if(!shader_program_file_create_from_buffer(&pfile, main_shader_source))
 		return 0;
 	
@@ -120,7 +119,8 @@ int init_shader(void)
 	uniform_volume_texture = shader_program_get_uniform_loc(&program, "volume_texture");
 	uniform_volume_step = shader_program_get_uniform_loc(&program, "volume_step");
 
-	uniform_material_color = shader_program_get_uniform_loc(&program, "material_color");
+	uniform_material_front_color = shader_program_get_uniform_loc(&program, "material_front_color");
+	uniform_material_back_color = shader_program_get_uniform_loc(&program, "material_back_color");
 	uniform_light_color = shader_program_get_uniform_loc(&program, "light_color");
 	uniform_light_spec_color = shader_program_get_uniform_loc(&program, "light_spec_color");
 	uniform_material_shininess = shader_program_get_uniform_loc(&program, "material_shininess");
@@ -141,7 +141,7 @@ int init_buffers(void)
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
 	
-	glGenBuffers(4, vbo);
+	glGenBuffers(2, vbo);
 	
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[1]);
@@ -193,7 +193,7 @@ static void update_volume_vbos(void)
 	if(!marching_cubes_create_vbos(volume, 
 								   volume_size, 
 								   grid_size, 
-								   isolevel, vbo[0], vbo[1])) {
+								   isolevel, vbo[0], vbo[1], 0, NULL)) {
 		
 		ERROR_MSG("Marching Cubes: nothing to generate");
 	}
@@ -204,12 +204,6 @@ int render_init(void)
 	int gl_major = 0, gl_minor = 0;
 	
 	//IF_FAILED0(!init);
-	
-	//parser_t parser;
-	//parser_create(&parser);
-	//parser_parse_text(&parser, "", NULL);
-	//parser_clean(&parser);
-	//exit(1);
 	
 #ifdef __WIN32
 	gl_funcs_init();
@@ -235,14 +229,14 @@ int render_init(void)
 	DEBUG_MSG("OpenGL version: %i.%i\n", gl_major, gl_minor);
 	DEBUG_MSG("GLSL version: %s\n", (char*) glGetString(GL_SHADING_LANGUAGE_VERSION));
 	
-	if( (gl_major < 3) || ( gl_major == 3 && gl_minor < 0 ) ) {
+	if(gl_major < 3) {
 		ERROR_MSG("the system must support OpenGL 3.0+\n");
 		return 0;
 	}
 	
 	// настраиваем основную камеру
 	TRACE_MSG("init main camera\n");
-	camera_init(&camera, vec3f(0.0f, 0.0f, 0.0f), vec3f(0.0f, 1.0f, 0.0f), vec3f(0.0f, 0.0f, -1.0f));
+	camera_init(&camera, vec3f(0.0f, 0.0f, 0.5f), vec3f(0.0f, 1.0f, 0.0f), vec3f(0.0f, 0.0f, -1.0f));
 	camera_set_limit(&camera, -95.0f, 95.0f, -360.0f, 360.0f);
 	camera_set_fov(&camera, camera_fov);
 	camera_set_move_velocity(&camera, camera_move_speed);
@@ -256,10 +250,13 @@ int render_init(void)
 	
 	// устанавливаем функцию по-умолчанию
 	parser_create(&parser);
-	str_function = "d = y;";
+	const char *default_func = "d = y;";
+	str_function = (char*) malloc(sizeof(char) * (strlen(default_func) + 1));
+	strcpy(str_function, default_func);
 	
 	// настраиваем и создаем скалярное поле
-	render_set_volume_parameters(vec3ui(128, 128, 128), vec3ui(32, 32, 32));
+	render_set_volume_size(vec3ui(128, 128, 128));
+	render_set_grid_size(vec3ui(40, 40, 40));
 	render_update_volume_tex();
 	
 	CHECK_GL_ERRORS();
@@ -272,16 +269,20 @@ int render_init(void)
 	init_buffers();
 	
 	// устанавливаем параметры по-умолчанию
-	new_light_position = light_position = vec3f(1.0f, 1.0f, 0.0f);
+	new_light_position = light_position = vec3f(1.0f, 1.0f, 1.0f);
 	rot_axis = vec3f(0.0f, 1.0f, 0.0f);
+	num_threads = 1;
 	rot_angle = 0.0f;
 	light_animate = 0;
 	light_rot_angle = 0.0f;
 	mat4(rotmat, 1.0f);
 	mat4(modelmat, 1.0f);
-	material_color = vec3f(0.5f, 0.5f, 0.5f);
+	material_front_color = vec3f(0.5f, 0.5f, 0.5f);
+	material_back_color = vec3f(0.5f, 0.0f, 0.0f);
 	light_color = vec3f(1.0f, 1.0f, 1.0f);
 	light_spec_color = vec3f(1.0f, 1.0f, 1.0f);
+	
+	input_set_wheel_limits(20, 150);
 	
 	init = 1;
 	
@@ -292,42 +293,6 @@ int render_init(void)
 	render_update(0.0f);
 	
 	return 1;
-}
-
-typedef struct {
-	parser_t parser;
-	vector3ui begin, end;
-	vector3ui volume_size;
-} volume_gen_t;
-
-static void generate_volume(void *arg)
-{
-	volume_gen_t *gen = (volume_gen_t*) arg;
-	
-	float_var_value_t float_vars[] = 
-		{
-			{1, 0.0f}, // d
-			{2, 0.0f}, // x
-			{3, 0.0f}, // y
-			{4, 0.0f}, // z
-			{0, 0.0f}
-		};
-	
-	for(unsigned k = gen->begin.z; k < gen->end.z; k++) {
-		for(unsigned j = gen->begin.y; j < gen->end.y; j++) {
-			for(unsigned i = gen->begin.x; i < gen->end.x; i++) {
-				
-				float_vars[0].value = 0.0f; float_vars[1].value = i; 
-				float_vars[2].value = j; float_vars[3].value = k;
-				
-				if(parser_parse_text(&gen->parser, str_function, float_vars) != 0)
-					return;
-				
-				volume[i + j*gen->volume_size.x + k*gen->volume_size.x*gen->volume_size.y] = float_vars[0].value;
-				
-			}
-		}
-	}
 }
 
 void render_set_number_of_threads(unsigned num)
@@ -356,12 +321,18 @@ static float volume_func(vector3f pos)
 	return float_vars[0].value; // d
 }
 
-void render_set_volume_parameters(vector3ui volume_size_v, vector3ui grid_size_v)
+void render_set_grid_size(vector3ui grid_size_v)
+{
+	grid_size = grid_size_v;
+	grid_step = vec3f_div(vec3f(1.0f, 1.0f, 1.0f), vec3ui_to_vec3f(grid_size));
+
+	update_volume_vbos();
+}
+
+void render_set_volume_size(vector3ui volume_size_v)
 {
 	volume_size = volume_size_v;
 	volume_step = vec3f_div(vec3f(1.0f, 1.0f, 1.0f), vec3ui_to_vec3f(volume_size));
-	grid_size = grid_size_v;
-	grid_step = vec3f_div(vec3f(1.0f, 1.0f, 1.0f), vec3ui_to_vec3f(grid_size));
 	
 	if(volume) {
 		free(volume);
@@ -369,42 +340,54 @@ void render_set_volume_parameters(vector3ui volume_size_v, vector3ui grid_size_v
 	}
 	
 	volume = (float*) malloc(sizeof(float) * volume_size.x*volume_size.y*volume_size.z);
+	
+	// проверяем количество потоков и решаем использовать ли многопоточность
+	if(num_threads >= 2) {
 
-	if(num_threads > 1) {
-		thread_t *threads = (thread_t*) malloc(sizeof(thread_t) * num_threads);
-		volume_gen_t *func_args = (volume_gen_t*) malloc(sizeof(volume_gen_t) * num_threads);
+		// устанавливаем кол-во потоков
+		omp_set_num_threads(num_threads);
 		
-		float_var_value_t float_vars[] = 
-			{
-				{1, 0.0f}, // d
-				{2, 0.0f}, // x
-				{3, 0.0f}, // y
-				{4, 0.0f}, // z
-				{0, 0.0f}
-			};
-		
-		for(int i = 0; i < num_threads; i++) {
+		// запускаем паралельно данный участок кода
+		#pragma omp parallel firstprivate(volume_size) shared(volume, str_function)
+		{
+			int i = omp_get_thread_num();
 			
-			parser_create(&func_args[i].parser);
-			parser_clean(&func_args[i].parser);
+			parser_t tparser;
+			parser_create(&tparser);
+			parser_clean(&tparser);
 			
-			if(parser_parse_text(&func_args[i].parser, str_function, float_vars) != 0)
-				break;
+			// вычисляем интервал вычислений для данного потока
+			vector3ui begin = vec3ui(0, 0, volume_size.z * ((float) (i) / (float) omp_get_num_threads()));
+			vector3ui end = vec3ui(volume_size.x, volume_size.y, volume_size.z * ((float) (i+1) / (float) omp_get_num_threads()));
 			
-			func_args[i].begin = vec3ui(0, 0, volume_size.z * ((float) (i) / (float) num_threads));
-			func_args[i].end = vec3ui(volume_size.x, volume_size.y, volume_size.z * ((float) (i+1) / (float) num_threads));
-			func_args[i].volume_size = volume_size;
+			float_var_value_t float_vars[] = 
+				{
+					{1, 0.0f}, // d
+					{2, 0.0f}, // x
+					{3, 0.0f}, // y
+					{4, 0.0f}, // z
+					{0, 0.0f}
+				};
 			
-			thread_create(&threads[i], generate_volume, (void*) &func_args[i]);
-		}
-		
-		for(int i = 0; i < num_threads; i++) {
-			thread_join(&threads[i]);
-			parser_clean(&func_args[i].parser);
+			// проходимся по соотвествующему участку массива
+			for(unsigned k = begin.z; k < end.z; k++) {
+				for(unsigned j = begin.y; j < end.y; j++) {
+					for(unsigned i = begin.x; i < end.x; i++) {
+						
+						float_vars[0].value = 0.0f; float_vars[1].value = i; 
+						float_vars[2].value = j; float_vars[3].value = k;
+						
+						if(parser_parse_text(&tparser, str_function, float_vars) == 0) {
+							volume[i + j*volume_size.x + k*volume_size.x*volume_size.y] = float_vars[0].value;
+						}
+					}
+				}
+			}
+			
+			parser_clean(&tparser);
+			
 		}
 
-		free(threads);
-		free(func_args);
 	} else {
 		// проходимся по всему массиву и устанавливаем соотвествующее функции значение
 		for(unsigned k = 0; k < volume_size.z; k++) {
@@ -435,15 +418,18 @@ void render_update(double last_frame_time)
 	// обновляем камеру (позицию и т.п)
 	update_camera(last_frame_time);
 	
-	mat4_mult2(modelmat, modelmat, rotmat);
+	// поулчаем параметры камеры
+	camera_pos = camera_get_position(&camera);
+	camera_get_view_matrix(&camera, viewmat);
+	camera_get_projection_matrix(&camera, projectionmat);
 	
 	// обновляем вращение объекта (arcball)
 	update_object_orientation();
+	mat4_mult2(modelmat, rotmat, modelmat);
 	
 	// смещаем объект
 	matrix4f translatemat;
-	mat4_translate(translatemat, -0.5f, -0.5f, -1.0f);
-	
+	mat4_translate(translatemat, -0.5f, -0.5f, -0.5f);
 	mat4_mult2(modelmat, modelmat, translatemat);
 	
 	// вращаем источник света
@@ -476,11 +462,6 @@ void render_update(double last_frame_time)
 		
 	}
 	
-	// поулчаем параметры камеры
-	camera_pos = camera_get_position(&camera);
-	camera_get_view_matrix(&camera, viewmat);
-	camera_get_projection_matrix(&camera, projectionmat);
-	
 	mat4_inverse(model_inv_mat4, modelmat);
 	mat4_submat(model_inv_mat3, 3, 3, model_inv_mat4);
 	
@@ -503,7 +484,8 @@ void render_update(double last_frame_time)
 	glUniform1f(uniform_coef_specular, coef_specular);
 	glUniform1f(uniform_material_shininess, material_shininess);
 	glUniform1f(uniform_coef_gamma, coef_gamma);
-	glUniform3f(uniform_material_color, material_color.x, material_color.y, material_color.z);
+	glUniform3f(uniform_material_front_color, material_front_color.x, material_front_color.y, material_front_color.z);
+	glUniform3f(uniform_material_back_color, material_back_color.x, material_back_color.y, material_back_color.z);
 	glUniform3f(uniform_light_color, light_color.x, light_color.y, light_color.z);
 	glUniform3f(uniform_light_spec_color, light_spec_color.x, light_spec_color.y, light_spec_color.z);
 	
@@ -553,6 +535,7 @@ void update_object_orientation(void)
 			last_mouse_y = my;
 		} else if(arcball && !input_get_mousebtn_state(MOUSE_LEFTBTN)) {
 			arcball = 0;
+			return;
 		}
 		
 		if(arcball) {
@@ -560,21 +543,31 @@ void update_object_orientation(void)
 			
 			if(mx < 0)
 				mx = 0;
+			else if(mx > window_width)
+				mx = window_width;
 			if(my < 0)
 				my = 0;
+			else if(my > window_height)
+				my = window_height;
 			
 			if(last_mouse_x != mx || last_mouse_y != my) {
+				// получаем вектора вращения виртуальной сферы
 				vector3f v1 = compute_sphere_vector(last_mouse_x, last_mouse_y);
 				vector3f v2 = compute_sphere_vector(mx, my);
+				
+				// угол вращения
 				rot_angle = RAD_TO_DEG(math_acosf(math_min(1.0f, vec3f_dot(v1, v2))));
 				
-				matrix3f modelview3, modelview_inv3;
-				matrix4f modelview4;
-				mat4_mult2(modelview4, viewmat, modelmat);
-				mat4_submat(modelview3, 3, 3, modelview4);
-				mat3_inverse(modelview_inv3, modelview3);
-				rot_axis = mat3_mult_vec3(modelview_inv3, vec3f_cross(v1, v2));
+				matrix3f rotmat3, model3, rotmodel3;
+				mat4_submat(rotmat3, 3, 3, rotmat);
+				mat4_submat(model3, 3, 3, modelmat);
 				
+				mat3_mult2(rotmodel3, rotmat3, model3);
+				
+				// получаем ось вращения (переводим её в систему координат объекта)
+				rot_axis = mat3_mult_vec3(rotmodel3, vec3f_norm(vec3f_cross(v1, v2)));
+				
+				// домножаем матрицу вращения
 				mat4_rotate_axis_mult(rotmat, rot_angle, rot_axis);
 				
 				last_mouse_x = mx;
@@ -588,19 +581,10 @@ void update_camera(double t)
 {	
 	IF_FAILED(init);
 	
-	//// обновляем позицию камеры
-	if(input_get_kbkey_state(KB_space))
-		camera_move_up(&camera, camera_step);
-	if(input_get_kbkey_state(KB_shift))
-		camera_move_down(&camera, camera_step);
-	if(input_get_kbkey_state(KB_W) || input_get_kbkey_state(KB_w))
-		camera_move_forward(&camera, camera_step);
-	if(input_get_kbkey_state(KB_S) || input_get_kbkey_state(KB_s))
-		camera_move_backward(&camera, camera_step);
-	if(input_get_kbkey_state(KB_A) || input_get_kbkey_state(KB_a))
-		camera_move_left(&camera, camera_step);
-	if(input_get_kbkey_state(KB_D) || input_get_kbkey_state(KB_d))
-		camera_move_right(&camera, camera_step);
+	// зумируем изменяя угол обзора
+	wheel_rot = input_get_wheel_rot();
+	
+	render_set_camera_fov(wheel_rot);
 	
 	camera_update(&camera, t);
 }
@@ -649,10 +633,15 @@ void render_destroy(void)
 	
 	shader_program_file_destroy(&pfile);
 	
-	glDeleteBuffers(4, vbo);
+	glDeleteBuffers(2, vbo);
 	glDeleteVertexArrays(1, &vao);
 	
 	parser_clean(&parser);
+	
+	if(str_function) {
+		free(str_function);
+		str_function = NULL;
+	}
 	
 	if(volume) {
 		free(volume);
@@ -683,9 +672,130 @@ int render_set_function_text(const char *function_text)
 		return error;
 	}
 	
-	str_function = (char*) function_text;
+	
+	if(str_function) {
+		free(str_function);
+		str_function = NULL;
+	}
+	
+	str_function = (char*) malloc(sizeof(char) * (strlen(function_text) + 1));
+	strcpy(str_function, function_text);
 	
 	return 0;
+}
+
+int render_export_obj(char **buffer)
+{
+	IF_FAILED0(init);
+	
+	int element_buffer_size = 0, vertex_buffer_size = 0, normal_buffer_size = 0;
+	GLuint vertex_vbo, index_vbo, normal_vbo;
+	
+	glBindVertexArray(0);
+	
+	glGenBuffers(1, &vertex_vbo);
+	glGenBuffers(1, &index_vbo);
+	glGenBuffers(1, &normal_vbo);
+	
+	if(!marching_cubes_create_vbos(volume, 
+								   volume_size, 
+								   grid_size, 
+								   isolevel, vertex_vbo, index_vbo, normal_vbo, 
+								   volume_func)) {
+		
+		ERROR_MSG("Marching Cubes: nothing to generate");
+		return 0;
+	}
+	
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_vbo);
+	glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &element_buffer_size);
+	glBindBuffer(GL_ARRAY_BUFFER, vertex_vbo);
+	glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &vertex_buffer_size);
+	glBindBuffer(GL_ARRAY_BUFFER, normal_vbo);
+	glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &normal_buffer_size);
+	
+	if(element_buffer_size <= 0 || vertex_buffer_size <= 0 || normal_buffer_size <= 0) {
+		return 0;
+	}
+	
+	float *vertex_data = (float*) malloc(vertex_buffer_size);
+	float *normal_data = (float*) malloc(normal_buffer_size);
+	unsigned int *element_data = (unsigned int*) malloc(element_buffer_size);
+	
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_vbo);
+	glGetBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, element_buffer_size, element_data);
+	glBindBuffer(GL_ARRAY_BUFFER, vertex_vbo);
+	glGetBufferSubData(GL_ARRAY_BUFFER, 0, vertex_buffer_size, vertex_data);
+	glBindBuffer(GL_ARRAY_BUFFER, normal_vbo);
+	glGetBufferSubData(GL_ARRAY_BUFFER, 0, normal_buffer_size, normal_data);
+	
+	*buffer = (char*) malloc(sizeof(char) * (element_buffer_size*4 + vertex_buffer_size*4 + normal_buffer_size*4));
+	
+	strcat(*buffer, "# Generated via VRender\n");
+	
+	char *temp = (char*) malloc(sizeof(char) * 64);
+	sprintf(temp, "# isolevel: %.3f\n", isolevel);
+	strcat(*buffer, temp);
+	sprintf(temp, "# volume size: x %i y %i z %i\n", volume_size.x, volume_size.y, volume_size.z);
+	strcat(*buffer, temp);
+	sprintf(temp, "# grid size: x %i y %i z %i\n", grid_size.x, grid_size.y, grid_size.z);
+	strcat(*buffer, temp);
+	
+	unsigned buffer_begin = strlen(*buffer);
+	unsigned num_chars = 0;
+	char *ptr = *buffer;
+	
+	ptr += buffer_begin;
+	
+	
+	num_chars = sprintf(temp, "\n# Vertices\n");
+	strcat(ptr, temp);
+	ptr += num_chars;
+	
+	for(unsigned i = 0; i < (vertex_buffer_size / sizeof(float)); i += 3) {
+		num_chars = sprintf(temp, "v %f %f %f\n", vertex_data[i], vertex_data[i+1], vertex_data[i+2]);
+		strcat(ptr, temp);
+		ptr += num_chars;
+	}
+	
+	num_chars = sprintf(temp, "\n# Normals\n");
+	strcat(ptr, temp);
+	ptr += num_chars;
+	
+	for(unsigned i = 0; i < (normal_buffer_size / sizeof(float)); i += 3) {	
+		num_chars = sprintf(temp, "vn %f %f %f\n", normal_data[i], normal_data[i+1], normal_data[i+2]);
+		strcat(ptr, temp);
+		ptr += num_chars;
+	}
+	
+	num_chars = sprintf(temp, "\n# Faces\n");
+	strcat(ptr, temp);
+	ptr += num_chars;
+	
+	for(unsigned i = 0; i < (element_buffer_size / sizeof(unsigned int)); i += 3) {		
+		num_chars = sprintf(temp, "f %i//%i %i//%i %i//%i\n", 
+				element_data[i]+1, element_data[i]+1, 
+				element_data[i+1]+1, element_data[i+1]+1, 
+				element_data[i+2]+1, element_data[i+2]+1);
+		
+		strcat(ptr, temp);
+		ptr += num_chars;
+	}
+	
+	num_chars = sprintf(temp, "\n# End\n");
+	strcat(ptr, temp);
+	ptr += num_chars;
+	
+	free(vertex_data);
+	free(element_data);
+	free(normal_data);
+	free(temp);
+	
+	glDeleteBuffers(1, &vertex_vbo);
+	glDeleteBuffers(1, &index_vbo);
+	glDeleteBuffers(1, &normal_vbo);
+	
+	return 1;
 }
 
 ////
@@ -716,9 +826,10 @@ void render_set_isolevel_step_anim(float step)
 	isolevel_step = step;
 }
 
-void render_set_material_color(vector3f color)
+void render_set_material_color(vector3f front_color, vector3f back_color)
 {
-	material_color = color;
+	material_front_color = front_color;
+	material_back_color = back_color;
 }
 
 void render_set_light_color(vector3f color)

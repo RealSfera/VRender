@@ -48,6 +48,7 @@ void mat3_mult2(matrix3f out, matrix3f m1, matrix3f m2);
 
 /* Множественное умножение матриц */
 void mat4_mult3(matrix4f out, matrix4f m1, matrix4f m2, matrix4f m3);
+void mat3_mult3(matrix3f out, matrix3f m1, matrix3f m2, matrix3f m3);
 void mat4_mult4(matrix4f out, matrix4f m1, matrix4f m2, matrix4f m3, matrix4f m4);
 
 /* Умножить матрицу m на матрицу m2. Результат будет в матрице m */

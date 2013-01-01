@@ -55,10 +55,14 @@ int marching_cubes_create(const float *volume, vector3ui volume_size, vector3ui 
  * grid_size - размер сетки
  * isolevel - изо-значение в скалярном поле volume на основе котрого проиходит полигонизация
  * vertex_vbo, index_vbo - вершинные буферы, куда нужно загрузить данные
+ * Опционально:
+ * normal_vbo - вершинный буфер для нормалей
+ * function - указатель на функцию для вычисления нормалей
  */
 int marching_cubes_create_vbos(const float *volume, vector3ui volume_size, 
 							  vector3ui grid_size, float isolevel,
-							  GLuint vertex_vbo, GLuint index_vbo);
+							  GLuint vertex_vbo, GLuint index_vbo, GLuint normal_vbo,
+							  float (*function)(vector3f pos));
 
 #ifdef __cplusplus
 }

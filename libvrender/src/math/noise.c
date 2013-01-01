@@ -260,8 +260,8 @@ void vnoise3d_init_file(const char *filename, vector3ui noise3d_size)
 		// ...файл есть, читаем данные
 		noise3d_data = (float*) malloc(sizeof(float) * size);
 		unsigned read_bytes = fread((void*) noise3d_data, sizeof(float), size, file);
-		if(read_bytes*sizeof(float) != size) {
-			ERROR_MSG("cannot read 3d noise data; file = %s", filename);
+		if(read_bytes*sizeof(float) != size*sizeof(float)) {
+			ERROR_MSG("cannot read 3d noise data; file = %s\n", filename);
 		}
 		fclose(file);
 	}
