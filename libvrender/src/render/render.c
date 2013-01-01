@@ -690,8 +690,12 @@ int render_export_obj(char **buffer)
 	
 	int element_buffer_size = 0, vertex_buffer_size = 0, normal_buffer_size = 0;
 	GLuint vertex_vbo, index_vbo, normal_vbo;
+	GLint last_array_buffer, last_element_array_buffer;
 	
 	glBindVertexArray(0);
+	
+	glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &last_array_buffer);	
+	glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &last_element_array_buffer);
 	
 	glGenBuffers(1, &vertex_vbo);
 	glGenBuffers(1, &index_vbo);
@@ -704,6 +708,10 @@ int render_export_obj(char **buffer)
 								   volume_func)) {
 		
 		ERROR_MSG("Marching Cubes: nothing to generate");
+		
+		glBindBuffer(GL_ARRAY_BUFFER, last_array_buffer);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, last_element_array_buffer);
+		
 		return 0;
 	}
 	
@@ -715,6 +723,10 @@ int render_export_obj(char **buffer)
 	glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &normal_buffer_size);
 	
 	if(element_buffer_size <= 0 || vertex_buffer_size <= 0 || normal_buffer_size <= 0) {
+		
+		glBindBuffer(GL_ARRAY_BUFFER, last_array_buffer);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, last_element_array_buffer);
+		
 		return 0;
 	}
 	
@@ -794,6 +806,9 @@ int render_export_obj(char **buffer)
 	glDeleteBuffers(1, &vertex_vbo);
 	glDeleteBuffers(1, &index_vbo);
 	glDeleteBuffers(1, &normal_vbo);
+	
+	glBindBuffer(GL_ARRAY_BUFFER, last_array_buffer);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, last_element_array_buffer);
 	
 	return 1;
 }

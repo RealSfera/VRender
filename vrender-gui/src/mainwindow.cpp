@@ -194,7 +194,7 @@ void MainWindow::on_about_program_action_triggered()
 {
     
 	QMessageBox::information(this, QString::fromUtf8("О программе..."), 
-								   QString::fromUtf8("VRender - это программа для визуализации скалярных полей, построенных при помощи задаваемой функции\n\n" \
+								   QString::fromUtf8("VRender - это программа для построения и визуализации скалярных полей\n\n" \
 													 "Версия: "VERSION"\n" \
 													 "Автор: Панов 'Sfera' Евгений\n\n" \
 													 "Лицензия: GPL v3 (см. файл LICENSE)\n"));
