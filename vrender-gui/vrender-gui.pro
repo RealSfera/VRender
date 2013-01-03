@@ -27,3 +27,5 @@ HEADERS  += include/mainwindow.h \
 
 FORMS    += ui/mainwindow.ui \
             ui/helpdialog.ui
+
+RESOURCES += res/app.qrc

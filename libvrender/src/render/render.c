@@ -742,6 +742,7 @@ int render_export_obj(char **buffer)
 	glGetBufferSubData(GL_ARRAY_BUFFER, 0, normal_buffer_size, normal_data);
 	
 	*buffer = (char*) malloc(sizeof(char) * (element_buffer_size*4 + vertex_buffer_size*4 + normal_buffer_size*4));
+	*buffer[0] = '\0';
 	
 	strcat(*buffer, "# Generated via VRender\n");
 	
@@ -784,7 +785,7 @@ int render_export_obj(char **buffer)
 	strcat(ptr, temp);
 	ptr += num_chars;
 	
-	for(unsigned i = 0; i < (element_buffer_size / sizeof(unsigned int)); i += 3) {		
+	for(unsigned i = 0; i < (element_buffer_size / sizeof(unsigned int)) - 3; i += 3) {		
 		num_chars = sprintf(temp, "f %i//%i %i//%i %i//%i\n", 
 				element_data[i]+1, element_data[i]+1, 
 				element_data[i+1]+1, element_data[i+1]+1, 

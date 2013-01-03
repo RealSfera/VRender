@@ -1523,6 +1523,12 @@ int lexer_parser(parser_t *p, const char *text)
 		if(*ptr == '\n') {
 			ptr++;
 			continue;
+		} else if(*ptr == '\t') { // пропускаем табуляцию
+			ptr++;
+			continue;
+		} else if(*ptr == '\r') {
+			ptr++;
+			continue;
 		}
 		
 		if( isalpha(*ptr) ) {

@@ -142,8 +142,9 @@ void main(void) { \n
    // specular
    vec4 specular = vec4( pow(max(0.0, dot(h, n)), material_shininess) ) * coef_specular; \n
    \n
-   color += vec4(material_color, 1.0) * ambient * vec4(light_color, 1.0); \n
+   \n
    color += vec4(material_color, 1.0) * diffuse * vec4(light_color, 1.0); \n
+   color += vec4(material_color, 1.0) * ambient; \n
    color += specular * vec4(light_spec_color, 1.0); \n
    \n\n
    ////////////// Коррекция гаммы
