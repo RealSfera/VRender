@@ -115,7 +115,7 @@ static float smooth_noise3d(float x, float y, float z)
 	
 	float center2 = int_noise3d((int) x, (int) y, (int) (z + 1)) / 4.0f;
 	
-	return corners0 + corners1 + corners2 + sides0 + sides1 + sides2 + center0 + center1 + center2;
+	return (corners0 + corners1 + corners2) + (sides0 + sides1 + sides2) + (center0 + center1 + center2);
 }
 
 
@@ -205,7 +205,7 @@ float value_noise_2d(vector2f v)
 	int n = NUMBER_OCTAVES - 1;
 	
 	for(int i = 1; i < n; i++) {
-		total += interpolated_noise2d(v.x * (2 * i), v.x * (2 * i)) * (p * i);
+		total += interpolated_noise2d(v.x * (2 * i), v.y * (2 * i)) * (p * i);
 	}
 	
 	return total;
@@ -218,48 +218,48 @@ float value_noise_3d(vector3f v)
 	int n = NUMBER_OCTAVES - 1;
 	
 	for(int i = 1; i < n; i++) {
-		total += interpolated_noise3d(v.x * (2 * i), v.x * (2 * i), v.z * (2 * i)) * (p * i);
+		total += interpolated_noise3d(v.x * (2 * i), v.y * (2 * i), v.z * (2 * i)) * (p * i);
 	}
 	
 	return total;
 }
 
 
-static float *noise3d_data = NULL;
-static vector3ui noise_size;
+static float *snoise3d_data = NULL;
+static vector3ui snoise_size;
 
-void vnoise3d_init_file(const char *filename, vector3ui noise3d_size)
+void snoise3d_init_file(const char *filename, vector3ui snoise3d_size)
 {
 	IF_FAILED(filename);
 	
 	FILE *file = NULL;
 	
-	noise_size = noise3d_size;
+	snoise_size = snoise3d_size;
 	
 	// существует файл с шумом ?...
 	if((file = fopen(filename, "rb")) == NULL) {
 		// ...файла нет, значит нужно создать
 		ERROR_MSG("cannot open file %s with noise; creating it\n", filename);
 		
-		noise3d_data = (float*) malloc(sizeof(float) * noise_size.x*noise_size.y*noise_size.z);
+		snoise3d_data = (float*) malloc(sizeof(float) * snoise_size.x*snoise_size.y*snoise_size.z);
 		
 		file = fopen(filename, "w");
 		
-		for(unsigned k = 0; k < noise_size.z; k++) {
-			for(unsigned j = 0; j < noise_size.y; j++) {
-				for(unsigned i = 0; i < noise_size.x; i++) {
-					noise3d_data[i + j*noise_size.x + k*noise_size.x*noise_size.y] = 
-							value_noise_3d(vec3f(i, j ,k));
+		for(unsigned k = 0; k < snoise_size.z; k++) {
+			for(unsigned j = 0; j < snoise_size.y; j++) {
+				for(unsigned i = 0; i < snoise_size.x; i++) {
+					snoise3d_data[i + j*snoise_size.x + k*snoise_size.x*snoise_size.y] = 
+							simplex_noise_3d(vec3f(i, j ,k));
 				}
 			}
 		}
-		fwrite((void*) noise3d_data, sizeof(float), noise_size.x*noise_size.y*noise_size.z, file);
+		fwrite((void*) snoise3d_data, sizeof(float), snoise_size.x*snoise_size.y*snoise_size.z, file);
 		fclose(file);
 	} else {
-		unsigned size = noise3d_size.x*noise3d_size.y*noise3d_size.z;
+		unsigned size = snoise3d_size.x*snoise3d_size.y*snoise3d_size.z;
 		// ...файл есть, читаем данные
-		noise3d_data = (float*) malloc(sizeof(float) * size);
-		unsigned read_bytes = fread((void*) noise3d_data, sizeof(float), size, file);
+		snoise3d_data = (float*) malloc(sizeof(float) * size);
+		unsigned read_bytes = fread((void*) snoise3d_data, sizeof(float), size, file);
 		if(read_bytes*sizeof(float) != size*sizeof(float)) {
 			ERROR_MSG("cannot read 3d noise data; file = %s\n", filename);
 		}
@@ -267,8 +267,8 @@ void vnoise3d_init_file(const char *filename, vector3ui noise3d_size)
 	}
 }
 
-// трилинейная интерполяция значений
-INLINE float trilerp(float v000, float v100, float v101, float v001,  
+// трилинейная косинусная интерполяция значений
+INLINE float tricerp(float v000, float v100, float v101, float v001,  
 			  float v010, float v110, float v111, float v011, vector3f t)
 {
 	float result = 0.0f;
@@ -286,9 +286,9 @@ INLINE float trilerp(float v000, float v100, float v101, float v001,
 	return result;
 }
 
-float vnoise3d_trilerp_file(vector3f p)
+float snoise3d_tricerp_file(vector3f p)
 {
-	#define _data(vx, vy, vz) noise3d_data[((vx) % noise_size.x) + ((vy) % noise_size.y)*noise_size.x + ((vz) % noise_size.z)*noise_size.x*noise_size.y]
+	#define _data(vx, vy, vz) snoise3d_data[((vx) % snoise_size.x) + ((vy) % snoise_size.y)*snoise_size.x + ((vz) % snoise_size.z)*snoise_size.x*snoise_size.y]
 	
 	int int_px = (int) p.x;
 	int int_py = (int) p.y;
@@ -306,14 +306,18 @@ float vnoise3d_trilerp_file(vector3f p)
 	
 	vector3f t = vec3f( p.x-int_px, p.y-int_py, p.z-int_pz);
 	
-	return trilerp(v000, v100, v101, v001, v010, v110, v111, v011, t);
+	return tricerp(v000, v100, v101, v001, v010, v110, v111, v011, t);
 }
 
+static vector3f grad3[] = 
+	{
+		{1, 1, 0}, {-1, 1, 0}, {1, -1, 0}, {-1, -1, 0}, 
+        {1, 0, 1}, {-1, 0, 1}, {1, 0, -1}, {-1, 0, -1}, 
+        {0, 1, 1}, {0, -1, 1}, {0, 1, -1}, {0, -1, -1}
+	};
 
-////////////////////////////////// Perlin Noise - Шум Перлина
-
-static int p[512];
-static int permutation[] = 
+static int perm[512];
+static int p[] = 
 	{
 		151, 160, 137, 91, 90, 15, 131, 13, 201, 95, 96, 53, 194, 233, 7, 225, 140, 36, 103, 30, 69, 
 		142, 8, 99, 37, 240, 21, 10, 23, 190,  6, 148, 247, 120, 234, 75, 0, 26, 197, 62, 94, 252, 219, 
@@ -334,55 +338,236 @@ INLINE static float fade(float t)
 	return t * t * t * (t * (t * 6.0f - 15.0f) +  10.0f);
 }
 
-INLINE static float grad(int hash, vector3f p)
+void noise_init(void)
 {
-	int h = hash & 15;
-	float u = h < 8 ? p.x : p.y;
-	float v = h < 4 ? p.y : h == 12 || h == 14 ? p.x : p.z;
-	
-	return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v);
-}
-
-void perlin_noise_init(void)
-{
-	for(int i = 0; i < 256; i++) {
-		p[256 + i] = p[i] = permutation[i];
+	for(int i = 0; i < 512; i++) {
+		perm[i] = p[i & 255];
 	}
 }
 
-float perlin_noise_1d(float x)
-{
-	return 0.0f;
-}
-
-float perlin_noise_2d(vector2f p)
-{
-	return 0.0f;
-}
+////////////////////////////////// Perlin Noise - Шум Перлина
+// Основан на реализациях Кена Перлина (Ken Perlin) и Стефана Густавсона (Stefan Gustavson)
 
 float perlin_noise_3d(vector3f pos)
 {
-	int x = (int) math_floorf(pos.x) & 255;
-	int y = (int) math_floorf(pos.y) & 255;
-	int z = (int) math_floorf(pos.z) & 255;
+	int x = math_fast_floorf(pos.x);
+	int y = math_fast_floorf(pos.y);
+	int z = math_fast_floorf(pos.z);
 	
-	pos.x -= math_floorf(pos.x);
-	pos.y -= math_floorf(pos.y);
-	pos.z -= math_floorf(pos.z);
+	pos.x -= x;
+	pos.y -= y;
+	pos.z -= z;
 	
-	float u = fade(x), v = fade(y), w = fade(z);
+	x &= 255;
+	y &= 255;
+	z &= 255;
 	
-	int A = p[x] + y, AA = p[A] + z, AB = p[A+1] + z;
-	int B = p[x+1] + y, BA = p[B] + z, BB = p[B+1] + z;
+	float u = fade(pos.x), v = fade(pos.y), w = fade(pos.z);
 	
-	float result = math_lerp(w, math_lerp(v, math_lerp(u, grad(p[AA], vec3f(x, y, z)), 
-										   grad(p[BA], vec3f(x-1.0f, y, z))),
-						 math_lerp(u, grad(p[AB], vec3f(x, y-1.0f, z)),
-										   grad(p[BB], vec3f(x-1.0f, y-1.0f, z)))),
-						 math_lerp(v, math_lerp(u, grad(p[AA+1], vec3f(x, y, z-1.0f)), 
-										   grad(p[BA+1], vec3f(x-1.0f, y, z-1.0f))),
-						 math_lerp(u, grad(p[AB+1], vec3f(x, y-1.0f, z-1.0f)),
-									       grad(p[BB+1], vec3f(x-1.0f, y-1.0f, z-1.0f)))));
+	int gi000 = perm[ x +	  perm[ y +		perm[z] ] ]		% 12;
+	int gi001 = perm[ x +	  perm[ y +		perm[z + 1] ] ] % 12;
+	int gi010 = perm[ x +	  perm[ y + 1 + perm[z] ] ]		% 12;
+	int gi011 = perm[ x +	  perm[ y + 1 + perm[z + 1] ] ] % 12;
+	int gi100 = perm[ x + 1 + perm[ y +		perm[z] ] ]		% 12;
+	int gi101 = perm[ x + 1 + perm[ y +		perm[z + 1] ] ] % 12;
+	int gi110 = perm[ x + 1 + perm[ y + 1 + perm[z] ] ]		% 12;
+	int gi111 = perm[ x + 1 + perm[ y + 1 + perm[z + 1] ] ] % 12;
+	
+	float n000 = vec3f_dot(grad3[gi000], vec3f(pos.x,		 pos.y,		   pos.z));
+	float n100 = vec3f_dot(grad3[gi100], vec3f(pos.x - 1.0f, pos.y,		   pos.z));
+	float n010 = vec3f_dot(grad3[gi010], vec3f(pos.x,		 pos.y - 1.0f, pos.z));
+	float n110 = vec3f_dot(grad3[gi110], vec3f(pos.x - 1.0f, pos.y - 1.0f, pos.z));
+	float n001 = vec3f_dot(grad3[gi001], vec3f(pos.x,		 pos.y,		   pos.z - 1.0f));
+	float n101 = vec3f_dot(grad3[gi101], vec3f(pos.x - 1.0f, pos.y,		   pos.z - 1.0f));
+	float n011 = vec3f_dot(grad3[gi011], vec3f(pos.x,		 pos.y - 1.0f, pos.z - 1.0f));
+	float n111 = vec3f_dot(grad3[gi111], vec3f(pos.x - 1.0f, pos.y - 1.0f, pos.z - 1.0f));
+	
+	float nx00 = math_mix(n000, n100, u);
+	float nx01 = math_mix(n001, n101, u);
+	float nx10 = math_mix(n010, n110, u);
+	float nx11 = math_mix(n011, n111, u);
+	
+	float nxy0 = math_mix(nx00, nx10, v);
+	float nxy1 = math_mix(nx01, nx11, v);
+	
+	float nxyz = math_mix(nxy0, nxy1, w);
 			
-	return result;
+	return nxyz;
+}
+
+////////////////////////////////// Simplex Noise - Симплекс Шум
+// Основан на реализации Стефана Густавсона (Stefan Gustavson)
+
+float simplex_noise_2d(vector2f pos)
+{
+	const float F2 = 0.5f * (math_sqrtf(3.0f) - 1.0f);
+	const float G2 = (3.0f - math_sqrtf(3.0f)) / 6.0f;
+	
+	float s = (pos.x + pos.y) * F2;
+	
+	int i = math_fast_floorf(pos.x + s);
+	int j = math_fast_floorf(pos.y + s);
+	
+	float t = (i + j) * G2;
+	float X0 = i - t;
+	float Y0 = j - t;
+	
+	float x0 = pos.x - X0;
+	float y0 = pos.y - Y0;
+	
+	int i1, j1;
+	
+	if(x0 > y0) {
+		i1 = 1; j1 = 0;
+	} else {
+		i1 = 0; j1 = 1;
+	}
+	
+	float x1 = x0 - i1 + G2;
+	float y1 = y0 - j1 + G2;
+	float x2 = x0 - 1.0f + 2.0f * G2;
+	float y2 = y0 - 1.0f + 2.0f * G2;
+	
+	int ii = i & 255;
+	int jj = j & 255;
+	
+	int gi0 = perm[ii +		 perm[jj	 ]] % 12;
+	int gi1 = perm[ii + i1 + perm[jj + j1]] % 12;
+	int gi2 = perm[ii + 1  + perm[jj + 1]] % 12;
+	
+	float n0 = 0.0f, n1 = 0.0f, n2 = 0.0f;
+	
+#define dot2_3(v1, v2) ( v1.x*v2.x + v1.y*v2.y )
+	
+	float t0 = 0.5f - x0*x0 - y0*y0;
+	if(t0 < 0.0f) { 
+		n0 = 0.0f;
+	} else {
+		t0 *= t0;
+		n0 = t0 * t0 * dot2_3(grad3[gi0], vec2f(x0, y0));
+	}
+	
+	float t1 = 0.5f - x1*x1 - y1*y1;
+	if(t1 < 0.0f) { 
+		n1 = 0.0f;
+	} else {
+		t1 *= t1;
+		n1 = t1 * t1 * dot2_3(grad3[gi1], vec2f(x1, y1));
+	}
+	
+	float t2 = 0.5f - x2*x2 - y2*y2;
+	if(t2 < 0.0f) { 
+		n2 = 0.0f;
+	} else {
+		t2 *= t2;
+		n2 = t2 * t2 * dot2_3(grad3[gi2], vec2f(x2, y2));
+	}
+	
+#undef dot2_3
+
+	return 70.0f * (n0 + n1 + n2);
+}
+
+float simplex_noise_3d(vector3f pos)
+{
+	const float F3 = 1.0f / 3.0f;
+	const float G3 = 1.0f / 6.0f;
+	
+	float s = (pos.x + pos.y + pos.z) * F3;
+	
+	int i = math_fast_floorf(pos.x + s);
+	int j = math_fast_floorf(pos.y + s);
+	int k = math_fast_floorf(pos.z + s);
+	
+	
+	float t = (i + j + k) * G3;
+	float X0 = i - t;
+	float Y0 = j - t;
+	float Z0 = k - t;
+	
+	float x0 = pos.x - X0;
+	float y0 = pos.y - Y0;
+	float z0 = pos.z - Z0;
+	
+	int i1, i2,  j1, j2,  k1, k2;
+	
+	if(x0 >= y0) {
+		if(y0 >= z0) {
+			i1 = 1; j1 = 0; k1 = 0;
+			i2 = 1; j2 = 1; k2 = 0;
+		} else if(x0 >= z0) {
+			i1 = 1; j1 = 0; k1 = 0;
+			i2 = 1; j2 = 0; k2 = 1;
+		} else {
+			i1 = 0; j1 = 0; k1 = 1;
+			i2 = 1; j2 = 0; k2 = 1;
+		}
+	} else {
+		if(y0 < z0) {
+			i1 = 0; j1 = 0; k1 = 1;
+			i2 = 0; j2 = 1; k2 = 1;
+		} else if(x0 < z0) {
+			i1 = 0; j1 = 1; k1 = 0;
+			i2 = 0; j2 = 1; k2 = 1;
+		} else {
+			i1 = 0; j1 = 1; k1 = 0;
+			i2 = 1; j2 = 1; k2 = 0;
+		}
+	}
+	
+	float x1 = x0 - i1 + G3;
+	float y1 = y0 - j1 + G3;
+	float z1 = z0 - k1 + G3;
+	float x2 = x0 - i2 + 2.0f * G3;
+	float y2 = y0 - j2 + 2.0f * G3;
+	float z2 = z0 - k2 + 2.0f * G3;
+	float x3 = x0 - 1.0f + 3.0f * G3;
+	float y3 = y0 - 1.0f + 3.0f * G3;
+	float z3 = z0 - 1.0f + 3.0f * G3;
+	
+	int ii = i & 255;
+	int jj = j & 255;
+	int kk = k & 255;
+	
+	int gi0 = perm[ii +		 perm[jj +		perm[kk		]]] % 12;
+	int gi1 = perm[ii + i1 + perm[jj + j1 + perm[kk + k1]]] % 12;
+	int gi2 = perm[ii + i2 + perm[jj + j2 + perm[kk + k2]]] % 12;
+	int gi3 = perm[ii + 1 +  perm[jj + 1 +  perm[kk + 1 ]]] % 12;
+	
+	float n0 = 0.0f, n1 = 0.0f, n2 = 0.0f, n3 = 0.0f;
+	
+	float t0 = 0.6f - x0*x0 - y0*y0 - z0*z0;
+	if(t0 < 0.0f) { 
+		n0 = 0.0f;
+	} else {
+		t0 *= t0;
+		n0 = t0 * t0 * vec3f_dot(grad3[gi0], vec3f(x0, y0, z0));
+	}
+	
+	float t1 = 0.6f - x1*x1 - y1*y1 - z1*z1;
+	if(t1 < 0.0f) { 
+		n1 = 0.0f;
+	} else {
+		t1 *= t1;
+		n1 = t1 * t1 * vec3f_dot(grad3[gi1], vec3f(x1, y1, z1));
+	}
+	
+	float t2 = 0.6f - x2*x2 - y2*y2 - z2*z2;
+	if(t2 < 0.0f) { 
+		n2 = 0.0f;
+	} else {
+		t2 *= t2;
+		n2 = t2 * t2 * vec3f_dot(grad3[gi2], vec3f(x2, y2, z2));
+	}
+	
+	float t3 = 0.6f - x3*x3 - y3*y3 - z3*z3;
+	if(t3 < 0.0f) { 
+		n3 = 0.0f;
+	} else {
+		t3 *= t3;
+		n3 = t3 * t3 * vec3f_dot(grad3[gi3], vec3f(x3, y3, z3));
+	}
+	
+	return 32.0f * (n0 + n1 + n2 + n3);
+	//return 16.0f * (n0 + n1 + n2 + n3) + 1.0f;
 }

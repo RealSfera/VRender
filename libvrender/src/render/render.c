@@ -212,8 +212,8 @@ int render_init(void)
 	TRACE_MSG("init base render system\n");
 	
 	TRACE_MSG("init noise...\n");
-	perlin_noise_init();
-	vnoise3d_init_file("noise3d_128.n", vec3ui(128, 128, 128));
+	noise_init();
+	//snoise3d_init_file("snoise3d_256.n", vec3ui(256, 256, 256));
 	TRACE_MSG("noise initiliazed\n");
 	
 	glViewport(0, 0, window_width, window_height);

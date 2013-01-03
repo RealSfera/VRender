@@ -198,13 +198,30 @@ static float call_vnoise2(float x, float y)
 
 static float call_vnoise3(float x, float y, float z)
 {
-	//return value_noise_3d(vec3f(x, y, z));
-	return vnoise3d_trilerp_file(vec3f(x, y, z));
+	return value_noise_3d(vec3f(x, y, z));
 }
 
 static float call_pnoise3(float x, float y, float z)
 {
 	return perlin_noise_3d(vec3f(x, y, z));
+}
+
+static float call_snoise1(float x)
+{
+	return simplex_noise_2d(vec2f(x, 0.0f));
+	//return snoise3d_tricerp_file(vec3f(x, 0.0f, 0.0f));
+}
+
+static float call_snoise2(float x, float y)
+{
+	return simplex_noise_2d(vec2f(x, y));
+	//return snoise3d_tricerp_file(vec3f(x, 0.0f, y));
+}
+
+static float call_snoise3(float x, float y, float z)
+{
+	return simplex_noise_3d(vec3f(x, y, z));
+	//return snoise3d_tricerp_file(vec3f(x, y, z));
 }
 
 /////////////// -----
@@ -297,6 +314,7 @@ static float_function1_t builtin_functions1[] =
 		{ 125, (func1_t) &call_cbrtf },
 	
 		{ 132, (func1_t) &call_vnoise1 },
+		{ 138, (func1_t) &call_snoise1 },
 		{0, 0}
 	};
 
@@ -310,6 +328,7 @@ static float_function2_t builtin_functions2[] =
 		{ 131, (func2_t) &call_length2 },
 	
 		{ 133, (func2_t) &call_vnoise2 },
+		{ 137, (func2_t) &call_snoise2 },
 		{0, 0}
 	};
 
@@ -323,6 +342,7 @@ static float_function3_t builtin_functions3[] =
 
 		{ 134, (func3_t) &call_vnoise3 },
 	    { 135, (func3_t) &call_pnoise3 },
+		{ 136, (func3_t) &call_snoise3 },
 		{0, 0}
 	};
 
@@ -385,6 +405,9 @@ static function_param_t builtin_functions_params[] =
 		{ 133, 2 },
 		{ 134, 3 },
 		{ 135, 3 },
+		{ 136, 3 },
+		{ 137, 2 },
+		{ 138, 1 },
 		{0, 0}
 	};
 
@@ -437,12 +460,15 @@ static identifier_t builtin_identifiers[] =
 		{FUNCTION, "vnoise2", 133},
 		{FUNCTION, "vnoise3", 134},
 		{FUNCTION, "pnoise3", 135},
+		{FUNCTION, "snoise3", 136},
+		{FUNCTION, "snoise2", 137},
+		{FUNCTION, "snoise1", 138},
 		{0, "", 0}
 	};
 
 // последний глобальный индекс переменных
 static int last_var_global_id = 7;
-//static int last_func_global_id = 136;
+//static int last_func_global_id = 139;
 
 static void eval_expr(parser_t *p,float *value);
 static void eval_expr0(parser_t *p,float *value);
@@ -768,6 +794,8 @@ static float get_var_value(parser_t *p, int global_id)
 static void atom(parser_t *p, float *value)
 {
 	int id = 0, last = 0;
+	
+	DMSG("atom: %s\n", p->tokens[p->index].data);
 	
 	switch(p->tokens[p->index].type) {
 		case IDENTIFIER:
@@ -1104,7 +1132,7 @@ static void eval_expr3(parser_t *p, float *value)
 			float part = 0.0f, sum = 0.0f;
 			int last = 0;
 			
-			//DMSG("begin = %f end = %f\n", begin, end);
+			DMSG("begin = %f end = %f\n", begin, end);
 			
 			last = ++p->index;
 			
@@ -1117,7 +1145,7 @@ static void eval_expr3(parser_t *p, float *value)
 					// присваиваем i номер текущей итерации
 					assign_variable(p, find_var(p, "i"), (float) b);
 
-					eval_expr(p, &part);
+					eval_expr0(p, &part);
 					
 					
 					// вычисляем сумму
@@ -1128,7 +1156,7 @@ static void eval_expr3(parser_t *p, float *value)
 					p->index = last;
 					assign_variable(p, find_var(p, "i"), (float) b);
 
-					eval_expr(p, &part);
+					eval_expr0(p, &part);
 
 					sum += part;
 				}
@@ -1138,7 +1166,7 @@ static void eval_expr3(parser_t *p, float *value)
 			assign_variable(p, find_var(p, "i"), 0.0f);
 			
 			*value = sum;
-			//index++;
+			//p->index++;
 		} else {
 			set_error(p, "expected :", 4);
 		}
@@ -1196,6 +1224,8 @@ static void eval_expr1(parser_t *p, float *value)
 {
 	
 	if(p->tokens[p->index].type == IDENTIFIER) {
+		
+		DMSG("found identifier: %s\n", p->tokens[p->index].data);
 		
 		int var_id = 0;
 		
@@ -1389,7 +1419,7 @@ int parser_parse_text(parser_t *parser, const char *text, float_var_value_t *var
 	IF_FAILED0(parser && text && var_table);
 	
 #if 0
-	char *text1 = "d = y; a = 0;";
+	char *text1 = "d += 0..3: 1;";
 	float_var_value_t test_vars[] =
 		{
 			{1, 0.0f}, // d
@@ -1415,7 +1445,7 @@ int parser_parse_text(parser_t *parser, const char *text, float_var_value_t *var
 		// выделяем память под доп. переменные и устанавливаем значение переменной "i" в 0.0f
 		parser->float_extra_vars = (float_var_value_t*) malloc(sizeof(float_var_value_t) * 2);
 		parser->float_extra_vars[0].global_id = 6; parser->float_extra_vars[0].value = 0.0f;
-		parser->float_extra_vars[0].global_id = 0; parser->float_extra_vars[0].value = 0.0f;
+		parser->float_extra_vars[1].global_id = 0; parser->float_extra_vars[1].value = 0.0f;
 		
 		parser->init = 1;
 	}

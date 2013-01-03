@@ -26,11 +26,15 @@
 extern "C" {
 #endif
 
+/* Инициализация шумов */
+void noise_init(void);
+
 /* Классический Шум Перлина */
-void perlin_noise_init(void);
-//float perlin_noise_1d(float x);
-//float perlin_noise_2d(vector2f p);
-float perlin_noise_3d(vector3f p);
+float perlin_noise_3d(vector3f pos);
+
+/* Simplex Noise */
+float simplex_noise_2d(vector2f pos);
+float simplex_noise_3d(vector3f pos);
 
 /* Численный шум */
 float value_noise_1d(float x);
@@ -39,13 +43,13 @@ float value_noise_3d(vector3f p);
 
 
 /**
- * Инициализировать численный шум из файла, если файл не существует, 
+ * Инициализировать симплекс шум из файла, если файл не существует, 
  * то он будет создан и проинициализирован шумом 
  */
-void vnoise3d_init_file(const char *filename, vector3ui noise_size);
+void snoise3d_init_file(const char *filename, vector3ui snoise_size);
 
-/* Трилинейная интерполяция значений численного шума из файла */
-float vnoise3d_trilerp_file(vector3f p);
+/* Косинусная 3D интерполяция значений симплекс шума из файла */
+float snoise3d_tricerp_file(vector3f p);
 
 #ifdef __cplusplus
 }

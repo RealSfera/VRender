@@ -30,6 +30,7 @@
 #define math_min(a, b) ( (a) < (b) ? (a) : (b) )
 #define math_max(a, b) ( (a) > (b) ? (a) : (b) )
 #define math_clamp(x, a, b) (  (x) < (a) ? (a) : ( (x) > (b) ? (b) : (x) )  )
+#define math_mix(a, b, t) ( (1 - t) * a + (t * b) )
 
 #ifdef __cplusplus
 extern "C" {
@@ -88,6 +89,11 @@ SINLINE float math_cerp(float a, float b, float t)
 SINLINE float math_floorf(float a)
 {
 	return floorf(a);
+}
+
+SINLINE int math_fast_floorf(float a)
+{
+	return a > 0 ? (int) a : (int) (a - 1);
 }
 	
 #ifdef __cplusplus

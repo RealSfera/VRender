@@ -234,6 +234,9 @@
                  <property name="text">
                   <string>НАЧАТЬ ПОСТРОЕНИЕ</string>
                  </property>
+                 <property name="shortcut">
+                  <string>Ctrl+Return</string>
+                 </property>
                 </widget>
                </item>
               </layout>
