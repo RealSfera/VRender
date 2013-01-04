@@ -2,5 +2,6 @@
     <qresource prefix="/">
         <file alias="build_help">build_lang.xhtml</file>
         <file alias="prog_help">program_help.xhtml</file>
+        <file alias="icon">icon.png</file>
     </qresource>
 </RCC>

@@ -16,8 +16,17 @@
     <height>640</height>
    </size>
   </property>
+  <property name="font">
+   <font>
+    <stylestrategy>PreferDefault</stylestrategy>
+   </font>
+  </property>
   <property name="windowTitle">
    <string>VRender - Построитель и визуализатор скалярного поля</string>
+  </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>../res/icon.png</normaloff>../res/icon.png</iconset>
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QHBoxLayout" name="horizontalLayout_2">
