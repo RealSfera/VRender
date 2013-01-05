@@ -230,14 +230,12 @@
       в программе (и это только одна миллионная часть возможностей построения):</p>
     <p><em>    </em><em>Установите размер скалярного поля в 128 по всем
         координатам, размер поля полигонизации в 40, изо-уровень установите в 30
-        (или другой необходимый уровень), также рекомендую переписывать функцию
-        построения вручную, чтобы случайно не скопировать управляющий-символ
-        HTML.</em><br />
+        (или другой необходимый уровень).</em><br />
     </p>
     <p>    <strong>Сфера:</strong><br />
-      <code>        x = x - 64;<br />
-                y = y - 64;<br />
-                z = z - 64;<br />
+      <code>        x = x - 64; <br />
+                y = y - 64; <br />
+                z = z - 64; <br />
                 <br />
                 d = x**2 + y**2 + z**2 - 20**2;</code></p>
     <p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">   
@@ -279,8 +277,8 @@
     <p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><code>   
             d = distance3(x, y, z, 64, 64, 64);</code></p>
     <p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><code>   
-            d += snoise3(x, y, z) * 2;</code><!--EndFragment--></p>
-    <p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><!--EndFragment--></p>
+            d += snoise3(x, y, z) * 2;</code></p>
+    <p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"></p>
         <em>Сфера расчитывается при помощи distance3, а шум создаётся с помощью
       snoise3. </em>
     <p></p>
