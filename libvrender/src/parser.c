@@ -1419,7 +1419,7 @@ int parser_parse_text(parser_t *parser, const char *text, float_var_value_t *var
 	IF_FAILED0(parser && text && var_table);
 	
 #if 0
-	char *text1 = "d += 0..3: 1;";
+	char *text1 = "       d += snoise3(x, y, z) * 2; ";
 	float_var_value_t test_vars[] =
 		{
 			{1, 0.0f}, // d
@@ -1529,6 +1529,8 @@ int lexer_parser(parser_t *p, const char *text)
 		} else if(*ptr == '\r') {
 			ptr++;
 			continue;
+		} else if(*ptr == '\0') { // если нулевой-символ, ты выходим
+			break;
 		}
 		
 		if( isalpha(*ptr) ) {
@@ -1543,7 +1545,7 @@ int lexer_parser(parser_t *p, const char *text)
 			p->tokens[p->num_tokens].data = (char*) malloc(sizeof(char) * (ptr - begin ));
 			copy_text(begin, p->tokens[p->num_tokens].data, (ptr - begin));
 			
-			//printf("found identifier: %s\n", p->tokens[p->number_tokens].data);
+			//printf("found identifier: %s\n", p->tokens[p->num_tokens].data);
 			
 			p->num_tokens++;
 		} else if( isdigit(*ptr) ) {
@@ -1565,7 +1567,7 @@ int lexer_parser(parser_t *p, const char *text)
 			p->tokens[p->num_tokens].data = (char*) malloc(sizeof(char) * (ptr - begin ));
 			copy_text(begin, p->tokens[p->num_tokens].data, (ptr - begin));
 			
-			//printf("found number: %s\n", tokens[parser->number_tokens].data);
+			//printf("found number: %s\n", p->tokens[p->num_tokens].data);
 			
 			p->num_tokens++;
 		} else if( isprint(*ptr) ) {
@@ -1719,13 +1721,15 @@ int lexer_parser(parser_t *p, const char *text)
 					break;		
 			};
 			
-			//printf("found (%i): %s\n", p->tokens[p->number_tokens].type, p->tokens[p->number_tokens].data);
+			//printf("found (%i): %s\n", p->tokens[p->num_tokens].type, p->tokens[p->num_tokens].data);
 			
 			p->num_tokens++;
 			
 			// переходим к след. символу
 			ptr++;
 		} else {
+			
+			//printf("found error: %c (%i)\n", *ptr, (int) *ptr);
 			
 			// неверный символ, выходим с ошибкой
 			return 0;
