@@ -28,7 +28,6 @@ GLWindow::GLWindow(QWidget *parent) :
 	gl_format.setProfile(QGLFormat::CoreProfile);
 	gl_format.setDirectRendering(true);
 	gl_format.setDoubleBuffer(true);
-	gl_format.setSwapInterval(0);
 	gl_format.setSampleBuffers(true);
 	
 	// ...и устанавливаем
