@@ -136,6 +136,9 @@ unsigned int GLWindow::get_fps()
 
 void GLWindow::set_antialiasing(bool enable)
 {
+	
+	render_destroy();
+	
 	gl_format.setSampleBuffers(enable);
 	
 	setFormat(gl_format);

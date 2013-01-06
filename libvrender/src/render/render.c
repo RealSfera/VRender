@@ -203,7 +203,7 @@ int render_init(void)
 {
 	int gl_major = 0, gl_minor = 0;
 	
-	//IF_FAILED0(!init);
+	IF_FAILED0(!init);
 	
 #ifdef __WIN32
 	gl_funcs_init();
@@ -642,6 +642,8 @@ void render_destroy(void)
 		free(volume);
 		volume = NULL;
 	}
+	
+	init = 0;
 }
 
 int render_set_function_text(const char *function_text)
