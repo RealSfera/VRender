@@ -25,7 +25,6 @@ STRINGIFY(
 \n \
 #version 120 \n
 \n
-\n
 attribute vec3 position; \n
 \n
 varying vec3 fragment_l; \n

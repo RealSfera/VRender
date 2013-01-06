@@ -220,7 +220,7 @@ int shader_program_file_create_from_buffer(shader_program_file_t *pfile, const c
 	TRACE_MSG("create shader program from buffer\n");
 	
 	unsigned long length = strlen(buffer);
-	char *copy_buffer = (char*) malloc(sizeof(char) * length);
+	char *copy_buffer = (char*) malloc(sizeof(char) * length+1);
 	memcpy(copy_buffer, buffer, length+1);
 	
 	if(!parse_and_load_shader(copy_buffer, pfile)) {
