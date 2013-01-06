@@ -229,11 +229,6 @@ int render_init(void)
 	DEBUG_MSG("OpenGL version: %i.%i\n", gl_major, gl_minor);
 	DEBUG_MSG("GLSL version: %s\n", (char*) glGetString(GL_SHADING_LANGUAGE_VERSION));
 	
-	if(gl_major < 3) {
-		ERROR_MSG("the system must support OpenGL 3.0+\n");
-		return 0;
-	}
-	
 	// настраиваем основную камеру
 	TRACE_MSG("init main camera\n");
 	camera_init(&camera, vec3f(0.0f, 0.0f, 0.5f), vec3f(0.0f, 1.0f, 0.0f), vec3f(0.0f, 0.0f, -1.0f));

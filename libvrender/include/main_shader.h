@@ -23,14 +23,15 @@ STRINGIFY(
 			
 \n!!vs \n
 \n \
-#version 130 \n
+#version 120 \n
 \n
-in vec3 position; \n
 \n
-out vec3 fragment_l; \n
-out vec3 fragment_v; \n
-out vec3 fragment_h; \n
-out vec3 fragment_position; \n
+attribute vec3 position; \n
+\n
+varying vec3 fragment_l; \n
+varying vec3 fragment_v; \n
+varying vec3 fragment_h; \n
+varying vec3 fragment_position; \n
 \n
 uniform mat4 model; \n
 uniform mat4 view; \n
@@ -57,14 +58,12 @@ void main(void)  \n
 \n
 \n!!fs \n
 \n \
-#version 130 \n
+#version 120 \n
 \n
-out vec4 color; \n
-\n
-in vec3 fragment_l; \n
-in vec3 fragment_v; \n
-in vec3 fragment_h; \n
-in vec3 fragment_position; \n
+varying vec3 fragment_l; \n
+varying vec3 fragment_v; \n
+varying vec3 fragment_h; \n
+varying vec3 fragment_position; \n
 \n
 uniform sampler3D volume_texture; \n
 uniform vec3 volume_step; \n
@@ -82,18 +81,18 @@ uniform mat3 model_inv; \n
 \n
 void main(void) { \n
    \n
-   color = vec4(0.0, 0.0, 0.0, 1.0); \n
+   vec4 color = vec4(0.0, 0.0, 0.0, 1.0); \n
    vec3 material_color = vec3(0.0, 0.0, 0.0); \n
    \n
    ////////////// Расчет освещения
    \n
    vec3 gradient = vec3( \n
-				   (texture(volume_texture, fragment_position+vec3(volume_step.x, 0.0, 0.0)).r -  \n
-				   texture(volume_texture, fragment_position-vec3(volume_step.x, 0.0, 0.0)).r) / 2.0 * volume_step.x,  \n
-				   (texture(volume_texture, fragment_position+vec3(0.0, volume_step.y, 0.0)).r -  \n
-				   texture(volume_texture, fragment_position-vec3(0.0, volume_step.y, 0.0)).r) / 2.0 * volume_step.y,  \n
-				   (texture(volume_texture, fragment_position+vec3(0.0, 0.0, volume_step.z)).r -  \n
-				   texture(volume_texture, fragment_position-vec3(0.0, 0.0, volume_step.z)).r) / 2.0 * volume_step.z ); \n
+				   (texture3D(volume_texture, fragment_position+vec3(volume_step.x, 0.0, 0.0)).r -  \n
+				   texture3D(volume_texture, fragment_position-vec3(volume_step.x, 0.0, 0.0)).r) / 2.0 * volume_step.x,  \n
+				   (texture3D(volume_texture, fragment_position+vec3(0.0, volume_step.y, 0.0)).r -  \n
+				   texture3D(volume_texture, fragment_position-vec3(0.0, volume_step.y, 0.0)).r) / 2.0 * volume_step.y,  \n
+				   (texture3D(volume_texture, fragment_position+vec3(0.0, 0.0, volume_step.z)).r -  \n
+				   texture3D(volume_texture, fragment_position-vec3(0.0, 0.0, volume_step.z)).r) / 2.0 * volume_step.z ); \n
    \n
    vec3 n = normalize(gradient) * model_inv; \n
    \n
@@ -154,6 +153,8 @@ void main(void) { \n
    color = gamma_corrected; \n
    \n
    //////////////
+			
+   gl_FragColor = color;
 }
 
 );

@@ -25,7 +25,6 @@ GLWindow::GLWindow(QWidget *parent) :
 {
 	
 	// настраиваем формат Qt OpenGL
-	gl_format.setProfile(QGLFormat::CoreProfile);
 	gl_format.setDirectRendering(true);
 	gl_format.setDoubleBuffer(true);
 	gl_format.setSampleBuffers(true);
