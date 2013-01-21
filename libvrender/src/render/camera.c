@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2012 Evgeny Panov
+ *  Copyright (C) 2012-2013 Evgeny Panov
  *  This file is part of libvrender.
  *
  *  libvrender is free software: you can redistribute it and/or modify
@@ -74,7 +74,7 @@ void camera_set_angles_from_target(camera_t *cam, vector3f target)
 	
 	IF_FAILED(cam);
 	
-	// вычислеям из оси target вертикальный и горизонтальный углы вращения
+	// вычисляем из оси target вертикальный и горизонтальный углы вращения
 	
 	target_mod = vec3f_norm(vec3f(target.x, 0.0f, target.z));
 	

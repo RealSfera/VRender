@@ -1,6 +1,6 @@
 
 #
-# Copyright (C) 2012 Evgeny Panov
+# Copyright (C) 2012-2013 Evgeny Panov
 # This file is part of libvrender.
 #
 
@@ -51,22 +51,12 @@ set(HEADERS
           ${INCLUDEDIR}/marching_cubes.h 
           ${INCLUDEDIR}/main_shader.h )
 
-if(${CMAKE_SYSTEM_NAME} STREQUAL Linux)
-	#set(LIBRARIES m GL)
-    #add_definitions(-D__linux)
-
-elseif(${CMAKE_SYSTEM_NAME} STREQUAL Windows)
-	#set(LIBRARIES m opengl32)
-	#add_definitions(-D__win32)
-
+if(${CMAKE_SYSTEM_NAME} STREQUAL Windows)
     set(SOURCES ${SOURCES} ${SRCDIR}/gl_funcs.c )
     set(HEADERS ${HEADERS} ${INCLUDEDIR}/gl_funcs.h )
-
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCC)
-	set(EXTRA_C_FLAGS "-std=gnu99 -fopenmp -fgnu89-inline -msse -finline-functions -O2 -Wall")
-elseif(CMAKE_C_COMPILER_ID STREQUAL "Clang")
 	set(EXTRA_C_FLAGS "-std=gnu99 -fopenmp -fgnu89-inline -msse -finline-functions -O2 -Wall")
 elseif(MSVC)
 	source_group ("Header Files" FILES ${HEADERS})

@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2012 Evgeny Panov
+ *  Copyright (C) 2012-2013 Evgeny Panov
  *  This file is part of libvrender.
  *
  *  libvrender is free software: you can redistribute it and/or modify
@@ -187,7 +187,7 @@ void shader_program_unbind(shader_program_t *program)
 		return;
 	}
 		
-	glUseProgram(0); // ???
+	glUseProgram(0);
 }
 
 int shader_program_get_uniform_loc(shader_program_t *program, const char* name)

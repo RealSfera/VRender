@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2012 Evgeny Panov
+ *  Copyright (C) 2012-2013 Evgeny Panov
  *  This file is part of libvrender.
  *
  *  libvrender is free software: you can redistribute it and/or modify
@@ -603,8 +603,6 @@ void render_draw(void)
 	glDrawElements(GL_TRIANGLES, size / sizeof(unsigned int), GL_UNSIGNED_INT, NULL);
 	
 	shader_program_unbind(&program);
- 	
- 	CHECK_GL_ERRORS();
 }
 
 void render_change_window(unsigned int width, unsigned int height)
@@ -811,8 +809,6 @@ int render_export_obj(char **buffer)
 	return 1;
 }
 
-////
-
 void render_set_isolevel(float level)
 {
 	isolevel = level;
@@ -918,5 +914,3 @@ void render_set_camera_fov(float fov)
 	
 	camera_set_fov(&camera, camera_fov);
 }
-
-////

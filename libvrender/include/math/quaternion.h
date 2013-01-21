@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2012 Evgeny Panov
+ *  Copyright (C) 2012-2013 Evgeny Panov
  *  This file is part of libvrender.
  *
  *  libvrender is free software: you can redistribute it and/or modify
@@ -196,7 +196,7 @@ SINLINE quaternion quat_lerp(quaternion_lerp_t *lerp, float t)
 	if(t <= 0.0f)
 		return lerp->q1;
 	else if(t >= 1.0f)
-		return lerp->q2;
+		return quat_add(lerp->q1, lerp->q2);
 		
 	return quat_add(lerp->q1, quat_mult_c(lerp->q2, t));
 }

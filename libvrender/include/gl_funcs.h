@@ -1,5 +1,5 @@
-﻿/*
- *  Copyright (C) 2012 Evgeny Panov
+/*
+ *  Copyright (C) 2012-2013 Evgeny Panov
  *  This file is part of libvrender.
  *
  *  libvrender is free software: you can redistribute it and/or modify

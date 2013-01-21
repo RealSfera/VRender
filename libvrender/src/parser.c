@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2012 Evgeny Panov
+ *  Copyright (C) 2012-2013 Evgeny Panov
  *  This file is part of libvrender.
  *
  *  libvrender is free software: you can redistribute it and/or modify
@@ -209,19 +209,16 @@ static float call_pnoise3(float x, float y, float z)
 static float call_snoise1(float x)
 {
 	return simplex_noise_2d(vec2f(x, 0.0f));
-	//return snoise3d_tricerp_file(vec3f(x, 0.0f, 0.0f));
 }
 
 static float call_snoise2(float x, float y)
 {
 	return simplex_noise_2d(vec2f(x, y));
-	//return snoise3d_tricerp_file(vec3f(x, 0.0f, y));
 }
 
 static float call_snoise3(float x, float y, float z)
 {
 	return simplex_noise_3d(vec3f(x, y, z));
-	//return snoise3d_tricerp_file(vec3f(x, y, z));
 }
 
 /////////////// -----
@@ -1419,7 +1416,7 @@ int parser_parse_text(parser_t *parser, const char *text, float_var_value_t *var
 	IF_FAILED0(parser && text && var_table);
 	
 #if 0
-	char *text1 = "       d += snoise3(x, y, z) * 2; ";
+	char *text1 = "d += snoise3(x, y, z) * 2;";
 	float_var_value_t test_vars[] =
 		{
 			{1, 0.0f}, // d

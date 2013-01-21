@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2012 Evgeny Panov
+ *  Copyright (C) 2012-2013 Evgeny Panov
  *  This file is part of libvrender.
  *
  *  libvrender is free software: you can redistribute it and/or modify
@@ -331,7 +331,7 @@ vector3f marching_cubes_calculate_normal(const float *volume, vector3ui size,
 	result.z = (_function(vec3f(position.x, position.y, position.z + delta.z)) - 
 				_function(vec3f(position.x, position.y, position.z - delta.z))) / 2.0f*delta.z;
 			   
-#undef function
+#undef _function
 	
 	// нормализуем градиент и получаем единичную нормаль
 	return vec3f_norm(result);
@@ -352,7 +352,7 @@ int marching_cubes_polygonise(cell_t cell, float isolevel, vector3f *out_vertice
 	IF_FAILED_RET(out_vertices && out_triangles && out_vertices, -1);
 
 	// определяем значения в вершинах ячейки (вокселя)
-	// если значение отрицательное, то значит данная вершина находится внутри объёма,
+	// если значение меньше isolevel, то значит данная вершина находится внутри объёма,
 	// иначе снаружи, затем устанавливаем соотвествующий данной вершине бит
 	unsigned int cube_value = 1;
 	for(i = 0; i < 8; i++) {
@@ -360,8 +360,7 @@ int marching_cubes_polygonise(cell_t cell, float isolevel, vector3f *out_vertice
 		cube_value *= 2;
 	}
 
-	// Если для данной конфигурации ячейки ненужна полигонизация
-	// (случай когда все значения в вершинах отрицательны или положительны), то
+	// Если для данной конфигурации ячейки не нужна полигонизация, то
 	// пропускаем эту ячейку
 	if(mc_edge_table[cube] == 0x000)
 		return 0;
@@ -465,9 +464,9 @@ int marching_cubes_create(const float *volume, vector3ui volume_size, vector3ui 
 				vector3f  pos_offset   = vec3f_mult(vec3f(i, j, k), pos_step);
 				vector3ui value_offset = vec3ui_mult(vec3ui(i, j, k), value_step);
 				
-				// создаем ячейку с соотвествующими вершинами и изо-значениями
 				#define VOLUME(v) volume[(v).x + (v).y*volume_size.x + (v).z*volume_size.x*volume_size.y]
 				
+				// создаем ячейку с соотвествующими вершинами и изо-значениями
 				cell.vertices_positions[0] = pos_offset;
 				cell.vertices_values[0]    = VOLUME(value_offset);
 				
@@ -582,12 +581,13 @@ int marching_cubes_create_vbos(const float *volume, vector3ui volume_size,
 	
 	// загружаем вершины
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vector3f) * n_vertices, (const GLvoid*) vertices, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vector3f) * n_vertices, (const GLvoid*) vertices, GL_STATIC_DRAW);
 	
 	// загружаем индексы
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_vbo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(triangle_t) * n_triangles, (const GLvoid*) triangles, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(triangle_t) * n_triangles, (const GLvoid*) triangles, GL_STATIC_DRAW);
 	
+	// если требуется, то вычисляем нормали для каждой вершины и записываем их в normal_vbo
 	if(normal_vbo != 0) {
 		vector3f *normals = (vector3f*) malloc(sizeof(vector3f) * n_vertices);
 		vector3f delta = vec3f_div(vec3f(1.0f, 1.0f, 1.0f), vec3ui_to_vec3f(grid_size));

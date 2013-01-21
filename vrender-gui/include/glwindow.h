@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2012 Evgeny Panov
+ *  Copyright (C) 2012-2013 Evgeny Panov
  *  This file is part of vrender-gui.
  *
  *  vrender-gui is free software: you can redistribute it and/or modify
@@ -70,7 +70,6 @@ class GLWindow : public QGLWidget
 		// Получить текущий fps
 		unsigned int get_fps();
 		
-		void set_antialiasing(bool enable);
 		bool set_function_text(const char* text);
 		void set_isolevel(float level);
 		void set_isolevel_animation(int animate);

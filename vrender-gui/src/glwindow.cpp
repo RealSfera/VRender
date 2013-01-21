@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2012 Evgeny Panov
+ *  Copyright (C) 2012-2013 Evgeny Panov
  *  This file is part of vrender-gui.
  *
  *  vrender-gui is free software: you can redistribute it and/or modify
@@ -134,16 +134,6 @@ unsigned int GLWindow::get_fps()
 	return current_fps;
 }
 
-void GLWindow::set_antialiasing(bool enable)
-{
-	
-	render_destroy();
-	
-	gl_format.setSampleBuffers(enable);
-	
-	setFormat(gl_format);
-}
-
 void GLWindow::resizeGL(int w, int h)
 {	
 	render_change_window(w, h);
@@ -214,7 +204,7 @@ static QString get_error_string(int error)
 			result = QString::fromUtf8("Нет выражения");
 			break;
 		case 1:
-			result = QString::fromUtf8("Передача неверной строки с функцией");
+			result = QString::fromUtf8("Ожидание \';\'");
 			break;
 		case 2:
 			result = QString::fromUtf8("Переменная должна быть инициализированна с помощью \'=\'");

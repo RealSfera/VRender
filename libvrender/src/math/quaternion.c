@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2012 Evgeny Panov
+ *  Copyright (C) 2012-2013 Evgeny Panov
  *  This file is part of libvrender.
  *
  *  libvrender is free software: you can redistribute it and/or modify
@@ -49,9 +49,9 @@ quaternion_slerp_t quat_slerp_init_from_unit(quaternion q1, quaternion q2)
 quaternion quat_slerp(quaternion_slerp_t *lerp, float t)
 {
 	if(t <= 0.0f)
-		return lerp->q1;
+		return quat_mult_c(lerp->q1, math_sinf(lerp->omega));
 	else if(t >= 1.0f)
-		return lerp->q2;
+		return quat_mult_c(lerp->q2, math_sinf(lerp->omega));
 		
 	return quat_add( quat_mult_c(lerp->q1, math_sinf( (1.0f - t)*lerp->omega )), 
 					 quat_mult_c(lerp->q2, math_sinf( t*lerp->omega )) );

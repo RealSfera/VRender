@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2012 Evgeny Panov
+ *  Copyright (C) 2012-2013 Evgeny Panov
  *  This file is part of vrender-gui.
  *
  *  vrender-gui is free software: you can redistribute it and/or modify

@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2012 Evgeny Panov
+ *  Copyright (C) 2012-2013 Evgeny Panov
  *  This file is part of vrender-gui.
  *
  *  vrender-gui is free software: you can redistribute it and/or modify
@@ -20,7 +20,7 @@
 #include "ui_mainwindow.h"
 #include "glwindow.h"
 
-#define VERSION STRINGIFY(0.8.7)
+#define VERSION STRINGIFY(0.9.0)
 
 MainWindow::MainWindow(QWidget *parent) :
 	QMainWindow(parent),
@@ -54,8 +54,6 @@ MainWindow::MainWindow(QWidget *parent) :
 	program_help_dialog->set_html_text(prog_help_text);
 	
 	main_gl_window = new GLWindow(this);
-	
-	antialiasing_checked = true;
 
 	if(QThread::idealThreadCount() >= 2) {
 		ui->multithreading_box->setChecked(true);
@@ -95,10 +93,6 @@ void MainWindow::timerEvent(QTimerEvent *)
 	main_gl_window->set_light_color(vec3f( ui->light_color_red->value()/255.0f, ui->light_color_green->value()/255.0f, ui->light_color_blue->value()/255.0f ));
 	main_gl_window->set_light_spec_color(vec3f( ui->spec_color_red->value()/255.0f, ui->spec_color_green->value()/255.0f, ui->spec_color_blue->value()/255.0f ));
 	main_gl_window->set_light_rot_step(ui->light_rot_angle_step->value());
-	
-	// устанавливаем параметры камеры
-	//main_gl_window->set_camera_step(ui->camera_step_spin->value());
-	//main_gl_window->set_camera_move_speed(ui->camera_move_speed_spin->value());
 	
 	// устанавливаем изо-уровень
 	main_gl_window->set_isolevel_begin(ui->isolevel_value_begin->value());
@@ -143,7 +137,7 @@ void MainWindow::on_about_program_action_triggered()
 	QMessageBox::information(this, QString::fromUtf8("О программе..."), 
 								   QString::fromUtf8("VRender - это программа для построения и визуализации скалярных полей\n\n" \
 													 "Версия: "VERSION"\n" \
-													 "Автор: Панов 'Sfera' Евгений\n\n" \
+													 "Автор: Евгений 'Sfera' Панов\n\n" \
 													 "Лицензия: GPL v3 (см. файл LICENSE)\n"));
 	
 }
@@ -195,25 +189,6 @@ void MainWindow::on_isolevel_value_valueChanged(double)
 void MainWindow::on_build_help_action_triggered()
 {
     build_help_dialog->show();
-}
-
-void MainWindow::on_antialiasing_box_clicked()
-{
-	QMessageBox message_box(this);
-	
-	message_box.setWindowTitle(QString::fromUtf8("Сглаживание"));
-	message_box.setText(QString::fromUtf8("Внимание! Изменение сглаживания сбрасывает все настройки, в том числе и функцию! Продолжить?"));
-	message_box.setStandardButtons(QMessageBox::No | QMessageBox::Yes);
-	message_box.setDefaultButton(QMessageBox::No);
-	
-	int result = message_box.exec();
-	
-	if(result == QMessageBox::Yes) {
-		antialiasing_checked = !antialiasing_checked;
-		main_gl_window->set_antialiasing(antialiasing_checked);
-	} else {
-		ui->antialiasing_box->setChecked(antialiasing_checked);
-	}
 }
 
 void MainWindow::on_multithreading_box_toggled(bool checked)

@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2012 Evgeny Panov
+ *  Copyright (C) 2012-2013 Evgeny Panov
  *  This file is part of vrender-gui.
  *
  *  vrender-gui is free software: you can redistribute it and/or modify
@@ -48,8 +48,6 @@ class MainWindow : public QMainWindow
 		
 		void on_build_help_action_triggered();
 		
-		void on_antialiasing_box_clicked();
-		
 		void on_multithreading_box_toggled(bool checked);
 		
 		void on_material_front_color_button_clicked();
@@ -76,7 +74,6 @@ class MainWindow : public QMainWindow
 		Ui::MainWindow *ui;
 		GLWindow *main_gl_window;
 		HelpDialog *build_help_dialog, *program_help_dialog;
-		bool antialiasing_checked;
 		int timer_id;
 		
 		void timerEvent(QTimerEvent *event);
