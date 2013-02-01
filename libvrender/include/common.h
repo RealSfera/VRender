@@ -22,16 +22,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+
 #ifndef __WIN32
-    #define GLCOREARB_PROTOTYPES
-    #include "GL/glcorearb.h"
+	#define GL_GLEXT_PROTOTYPES
+	#include "GL/gl.h"
+	#include "GL/glext.h"
 #endif
 
 #ifdef __WIN32
-	#include <GL/gl.h>
-    #include "GL/glext.h"
+	#include "GL/gl.h"
+	#include "GL/glext.h"
     #include "gl_funcs.h"
 #endif
+
 
 #define _DEBUG_
 #define _TRACE_

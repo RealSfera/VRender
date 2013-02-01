@@ -573,8 +573,13 @@ int marching_cubes_create_vbos(const float *volume, vector3ui volume_size,
 	// полигинизируем
 	result = marching_cubes_create(volume, volume_size, grid_size, isolevel, vertices, &n_vertices, triangles, &n_triangles);
 	
-	if(result == -1)
+	if(result == -1) {
+		
+		free(triangles);
+		free(vertices);
+		
 		return -1;
+	}
 	
 	glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &last_array_buffer);	
 	glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &last_element_array_buffer);

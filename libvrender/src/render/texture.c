@@ -49,7 +49,7 @@ void bind_safe(texture_t *texture)
 		glGetIntegerv(GL_TEXTURE_BINDING_1D, &last_tex1d_id);
 	else if(texture->dimension == 2)
 		glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_tex2d_id);
-	else if(texture->dimension == 2)
+	else if(texture->dimension == 3)
 		glGetIntegerv(GL_TEXTURE_BINDING_3D, &last_tex3d_id);
 	
 	glBindTexture(texture->gl_textype, texture->id);
@@ -61,7 +61,7 @@ void unbind_safe(texture_t *texture)
 		glBindTexture(texture->gl_textype, last_tex1d_id);
 	else if(texture->dimension == 2)
 		glBindTexture(texture->gl_textype, last_tex2d_id);
-	else if(texture->dimension == 2)
+	else if(texture->dimension == 3)
 		glBindTexture(texture->gl_textype, last_tex3d_id);
 }
 
@@ -138,7 +138,7 @@ void texture_create2d_from_data(texture_t *texture,
 		// ATI Bug
 		glEnable(texture->gl_textype);
 		
-		glGenerateMipmap(texture->gl_textype);
+		glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
 		
 		glDisable(texture->gl_textype);
 	}
@@ -188,7 +188,7 @@ void texture_create3d_from_data(texture_t *texture,
 		// ATI Bug
 		glEnable(texture->gl_textype);
 		
-		glGenerateMipmap(texture->gl_textype);
+		glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
 		
 		glDisable(texture->gl_textype);
 	}

@@ -20,7 +20,7 @@
 #include "ui_mainwindow.h"
 #include "glwindow.h"
 
-#define VERSION STRINGIFY(0.9.0)
+#define VERSION STRINGIFY(0.9.1)
 
 MainWindow::MainWindow(QWidget *parent) :
 	QMainWindow(parent),
