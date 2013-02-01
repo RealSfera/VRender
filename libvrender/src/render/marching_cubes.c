@@ -574,7 +574,6 @@ int marching_cubes_create_vbos(const float *volume, vector3ui volume_size,
 	result = marching_cubes_create(volume, volume_size, grid_size, isolevel, vertices, &n_vertices, triangles, &n_triangles);
 	
 	if(result == -1) {
-		
 		free(triangles);
 		free(vertices);
 		

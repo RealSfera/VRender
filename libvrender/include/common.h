@@ -24,13 +24,12 @@
 
 
 #ifndef __WIN32
-	#define GL_GLEXT_PROTOTYPES
-	#include "GL/gl.h"
-	#include "GL/glext.h"
+	#define GLCOREARB_PROTOTYPES
+	#include "GL/glcorearb.h"
 #endif
 
 #ifdef __WIN32
-	#include "GL/gl.h"
+	#include <GL/gl.h>
 	#include "GL/glext.h"
     #include "gl_funcs.h"
 #endif

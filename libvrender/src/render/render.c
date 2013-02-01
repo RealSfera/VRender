@@ -178,10 +178,10 @@ void render_update_volume_tex(void)
 	
 	// создаем текстуру с данными скалярного поля.
 	// используем только red компоненту
-	texture_create3d_from_data(&volume_texture, GL_R32F, GL_RED, 0, 
+	texture_create3d_from_data(&volume_texture, GL_R32F, GL_RED,
 							   volume_size.x, volume_size.y, volume_size.z, 
 							   GL_FLOAT, (void*) volume);
-	
+	texture_bind(&volume_texture);
 	glUniform3f(uniform_volume_step, volume_step.x, volume_step.y, volume_step.z);
 	
 	init = 1;

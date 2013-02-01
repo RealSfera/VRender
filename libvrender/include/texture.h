@@ -27,7 +27,7 @@ typedef struct {
 	unsigned int gl_textype; // GL_TEXTURE_*
 	unsigned int gl_minfilter, gl_magfilter; // GL_NEAREST, GL_LINEAR и т.п
 	
-	unsigned int gl_mipmap_level, gl_tex3d_layer; // пока неиспользуются
+	unsigned int gl_tex3d_layer; // пока неиспользуются
 	
 	int is_empty;
 } texture_t;
@@ -45,19 +45,19 @@ void texture_create1d_from_data(texture_t *texture,
 
 /* Создать 2D текстуру с данными */
 void texture_create2d_from_data(texture_t *texture, 
-						  int internal_format, GLenum format, int mipmap, unsigned int width, 
-						  unsigned int height, int minfilter, int magfilter, 
-						  GLenum data_type, void *data_buffer);
+						  int internal_format, GLenum format, unsigned int width, unsigned int height, 
+						  int minfilter, int magfilter, GLenum data_type, 
+						  void *data_buffer);
 
 /* Создать 3D текстуру с данными */
 void texture_create3d_from_data(texture_t *texture, 
-						  int internal_format, GLenum format, int mipmap, unsigned int width, 
-						  unsigned int height, unsigned int depth, GLenum data_type, void *data_buffer);
+						  int internal_format, GLenum format, unsigned int width, unsigned int height, 
+						  unsigned int depth, GLenum data_type, void *data_buffer);
 
 /* Создать пустую (без данных) текстуру */
 void texture_create2d_empty(texture_t *texture, 
-						  int internal_format, int format, int multisample,
-						  unsigned int width, unsigned int height);
+						  int internal_format, int format, unsigned int width,
+						  unsigned int height);
 
 /* Создать 2d текстуру из TGA файла (файл должен быть без сжатия) */
 int texture_create2d_from_tga(texture_t *texture, int use_mipmap, const char *filename);

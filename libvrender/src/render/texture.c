@@ -45,24 +45,36 @@ void bind_safe(texture_t *texture)
 {
 	IF_FAILED(texture && texture->id);
 	
-	if(texture->dimension == 1)
+	if(texture->dimension == 1) {
 		glGetIntegerv(GL_TEXTURE_BINDING_1D, &last_tex1d_id);
-	else if(texture->dimension == 2)
+		
+		if(last_tex1d_id != texture->id)
+			glBindTexture(texture->gl_textype, texture->id);
+	} else if(texture->dimension == 2) {
 		glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_tex2d_id);
-	else if(texture->dimension == 3)
+		
+		if(last_tex2d_id != texture->id)
+			glBindTexture(texture->gl_textype, texture->id);
+	} else if(texture->dimension == 3) {
 		glGetIntegerv(GL_TEXTURE_BINDING_3D, &last_tex3d_id);
-	
-	glBindTexture(texture->gl_textype, texture->id);
+		
+		if(last_tex3d_id != texture->id)
+			glBindTexture(texture->gl_textype, texture->id);
+	}
 }
 
 void unbind_safe(texture_t *texture)
 {
-	if(texture->dimension == 1)
-		glBindTexture(texture->gl_textype, last_tex1d_id);
-	else if(texture->dimension == 2)
-		glBindTexture(texture->gl_textype, last_tex2d_id);
-	else if(texture->dimension == 3)
-		glBindTexture(texture->gl_textype, last_tex3d_id);
+	if(texture->dimension == 1) {
+		if(last_tex1d_id != texture->id)
+			glBindTexture(texture->gl_textype, last_tex1d_id);
+	} else if(texture->dimension == 2) {
+		if(last_tex2d_id != texture->id)
+			glBindTexture(texture->gl_textype, last_tex2d_id);
+	} else if(texture->dimension == 3) {
+		if(last_tex3d_id != texture->id)
+			glBindTexture(texture->gl_textype, last_tex3d_id);
+	}
 }
 
 void texture_create1d_from_data(texture_t *texture, 
@@ -80,7 +92,6 @@ void texture_create1d_from_data(texture_t *texture,
 	texture->gl_minfilter = minfilter;
 	texture->gl_magfilter = magfilter;
 	texture->dimension = 1;
-	texture->gl_mipmap_level = 0;
 	texture->gl_textype = GL_TEXTURE_1D;
 	texture->is_empty = 0;
 	
@@ -100,7 +111,7 @@ void texture_create1d_from_data(texture_t *texture,
 }
 
 void texture_create2d_from_data(texture_t *texture, 
-						  int internal_format, GLenum format, int mipmap, unsigned int width, 
+						  int internal_format, GLenum format, unsigned int width, 
 						  unsigned int height, int minfilter, int magfilter, 
 						  GLenum data_type, void *data_buffer)
 {
@@ -114,7 +125,6 @@ void texture_create2d_from_data(texture_t *texture,
 	texture->gl_minfilter = minfilter;
 	texture->gl_magfilter = magfilter;
 	texture->dimension = 2;
-	texture->gl_mipmap_level = 0;
 	texture->gl_textype = GL_TEXTURE_2D;
 	texture->is_empty = 0;
 	
@@ -126,28 +136,16 @@ void texture_create2d_from_data(texture_t *texture,
 	glTexParameteri(texture->gl_textype, GL_TEXTURE_MAG_FILTER, texture->gl_magfilter);
 	glTexParameteri(texture->gl_textype, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(texture->gl_textype, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	if(mipmap)
-		glTexParameteri(texture->gl_textype, GL_TEXTURE_BASE_LEVEL, texture->gl_mipmap_level);
 	
 	// загружаем данные
 	TRACE_MSG("load texture data\n");
 	glTexImage2D(texture->gl_textype, 0, internal_format, width, height, 0, format, data_type, (const GLvoid*) data_buffer);
 	
-	// генерируем мипмапы
-	if(mipmap) {
-		// ATI Bug
-		glEnable(texture->gl_textype);
-		
-		glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
-		
-		glDisable(texture->gl_textype);
-	}
-	
 	unbind_safe(texture);
 }
 
 void texture_create3d_from_data(texture_t *texture, 
-						  int internal_format, GLenum format, int mipmap, unsigned int width, 
+						  int internal_format, GLenum format, unsigned int width, 
 						  unsigned int height, unsigned int depth, GLenum data_type, void *data_buffer)
 {
 	IF_FAILED(texture && !texture->id && data_buffer);
@@ -157,13 +155,9 @@ void texture_create3d_from_data(texture_t *texture,
 	glGenTextures(1, &texture->id);
 	
 	// настраиваем параметры текстуры
-	if(mipmap)
-		texture->gl_minfilter = GL_LINEAR_MIPMAP_LINEAR;
-	else
-		texture->gl_minfilter = GL_LINEAR;
+	texture->gl_minfilter = GL_LINEAR;
 	texture->gl_magfilter = GL_LINEAR;
 	texture->dimension = 3;
-	texture->gl_mipmap_level = 0;
 	texture->gl_textype = GL_TEXTURE_3D;
 	texture->is_empty = 0;
 	
@@ -176,29 +170,17 @@ void texture_create3d_from_data(texture_t *texture,
 	glTexParameteri(texture->gl_textype, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(texture->gl_textype, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(texture->gl_textype, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-	if(mipmap)
-		glTexParameteri(texture->gl_textype, GL_TEXTURE_BASE_LEVEL, texture->gl_mipmap_level);
 	
 	// загружаем данные
 	TRACE_MSG("load texture data\n");
 	glTexImage3D(texture->gl_textype, 0, internal_format, width, height, depth, 0, format, data_type, (const GLvoid*) data_buffer);
-	
-	// генерируем мипмапы
-	if(mipmap) {
-		// ATI Bug
-		glEnable(texture->gl_textype);
-		
-		glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
-		
-		glDisable(texture->gl_textype);
-	}
 	
 	unbind_safe(texture);
 }
 
 
 void texture_create2d_empty(texture_t *texture, 
-						  int internal_format, int format, int multisample,
+						  int internal_format, int format,
 						  unsigned int width, unsigned int height)
 {
 	IF_FAILED(texture && !texture->id);
@@ -210,11 +192,7 @@ void texture_create2d_empty(texture_t *texture,
 	texture->gl_minfilter = GL_LINEAR;
 	texture->gl_magfilter = GL_LINEAR;
 	texture->dimension = 2;
-	texture->gl_mipmap_level = 0;
-	//if(!multisample)
-		texture->gl_textype = GL_TEXTURE_2D;
-	//else
-	//	texture->gl_textype = GL_TEXTURE_2D_MULTISAMPLE;
+	texture->gl_textype = GL_TEXTURE_2D;
 	texture->is_empty = 1;
 	
 	bind_safe(texture);
@@ -225,11 +203,8 @@ void texture_create2d_empty(texture_t *texture,
 	glTexParameteri(texture->gl_textype, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	
 	
-	//if(!multisample)
-		glTexImage2D(texture->gl_textype, 0, internal_format, width, height, 0, 
-					 format, GL_UNSIGNED_BYTE, (const GLvoid*) 0);
-	//else
-	//	glTexImage2DMultisample(texture->gl_textype, 1, internal_format, width, height, 0);
+	glTexImage2D(texture->gl_textype, 0, internal_format, width, height, 0, 
+				 format, GL_UNSIGNED_BYTE, (const GLvoid*) 0);
 	
 	unbind_safe(texture);
 }
@@ -292,7 +267,7 @@ int texture_create2d_from_tga(texture_t *texture, int use_mipmap, const char *fi
 	internal_format = (header->image_spec.pixel_depth == 24) ? GL_RGB8 : GL_RGBA8;
 	
 	// создаем текстуру
-	texture_create2d_from_data(texture, internal_format, format, 1,
+	texture_create2d_from_data(texture, internal_format, format,
 							header->image_spec.image_width, 
 						  	header->image_spec.image_height, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR,
 						  	GL_UNSIGNED_BYTE, (void*) (buffer+sizeof(struct tga_header)+header->id_length));
