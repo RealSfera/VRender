@@ -31,6 +31,9 @@
 extern "C" {
 #endif
 
+/* Инициализировать OpenGL (Windows: инициализация указателей) */
+void render_init_opengl();
+
 /* Инициализировать визуализатор (рендер) */
 int render_init(void);
 
@@ -48,7 +51,8 @@ void render_set_light_spec_color(vector3f color);
 void render_set_light_angle(float angle_pos);
 void render_set_light_animation(int animate);
 void render_set_light_rot_step(float step);
-void render_set_volume_size(vector3ui volume_size);
+/* rebuild - если 1, то перестроить скалярное поле из функции */
+void render_set_volume_size(vector3ui volume_size, int rebuild);
 void render_set_grid_size(vector3ui grid_size);
 void render_set_material_color(vector3f front_color, vector3f back_color);
 void render_set_material_shininess(float shininess);
@@ -81,6 +85,14 @@ void render_draw(void);
 /* Обновление рендера (камеры и т.п.) */
 void render_update(double last_frame_time);
 
+/* Получить версию OpenGL */
+void render_get_opengl_version(int *major, int *minor);
+
+/* Получить указатель на массив с скалярным полем */
+void render_get_current_volume(float **volume, vector3ui *size);
+
+/* Установить импортированное скалярное поле */
+void render_set_external_volume(float *volume_ptr, vector3ui size);
 
 #ifdef __cplusplus
 }

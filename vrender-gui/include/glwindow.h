@@ -19,8 +19,8 @@
 #ifndef GLWINDOW_H
 #define GLWINDOW_H
 
-#include <QtOpenGL/QGLWidget>
 #include "render.h"
+#include <QtOpenGL/QGLWidget>
 
 class GLWindow : public QGLWidget
 {
@@ -76,7 +76,7 @@ class GLWindow : public QGLWidget
 		void set_isolevel_begin(float level);
 		void set_isolevel_end(float level);
 		void set_isolevel_step(float step);
-		void set_volume_size(vector3ui volume_size);
+        void set_volume_size(vector3ui volume_size);
 		void set_grid_size(vector3ui grid_size);
 		void set_material_color(vector3f front_color, vector3f back_color);
 		void set_light_color(vector3f color);

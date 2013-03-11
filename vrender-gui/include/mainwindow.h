@@ -70,7 +70,11 @@ class MainWindow : public QMainWindow
 		
 		void on_obj_export_action_triggered();
 		
-	private:
+        void on_volume_export_action_triggered();
+
+        void on_volume_import_action_triggered();
+
+private:
 		Ui::MainWindow *ui;
 		GLWindow *main_gl_window;
 		HelpDialog *build_help_dialog, *program_help_dialog;

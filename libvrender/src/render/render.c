@@ -29,8 +29,9 @@
 #include "parser.h"
 #include "string.h"
 #include "omp.h"
+#include <ctype.h>
 
-static int init = 0;
+static int init = 0, init_opengl = 0;
 
 static unsigned num_threads = 1;
 
@@ -74,6 +75,12 @@ static GLint uniform_modelmat, uniform_viewmat, uniform_projectionmat,
 
 // буферы с данными
 static GLuint vbo[2], vao;
+
+// количество элементов (треугольников) для отрисовки
+static unsigned num_elements = 0;
+
+// аттрибут для вершин
+static GLint attr_position;
 
 // позиции источника света
 static vector3f light_position, new_light_position;
@@ -135,9 +142,7 @@ int init_shader(void)
 }
 
 int init_buffers(void)
-{
-	GLint attr_position;
-	
+{	
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
 	
@@ -189,32 +194,44 @@ void render_update_volume_tex(void)
 
 static void update_volume_vbos(void)
 {
+    glBindVertexArray(0);
+
 	// полигонизируем скалярное поле
-	if(!marching_cubes_create_vbos(volume, 
+    if(!marching_cubes_create_vbos(volume,
 								   volume_size, 
 								   grid_size, 
-								   isolevel, vbo[0], vbo[1], 0, NULL)) {
+                                   isolevel, vbo[0], vbo[1], 0, NULL, &num_elements)) {
 		
 		ERROR_MSG("Marching Cubes: nothing to generate");
-	}
+    }
+}
+
+void render_init_opengl()
+{
+    IF_FAILED(!init_opengl);
+
+#ifdef __WIN32
+    gl_funcs_init();
+#endif
+
+    init_opengl = 1;
 }
 
 int render_init(void)
 {
-	int gl_major = 0, gl_minor = 0;
-	
 	IF_FAILED0(!init);
-	
-#ifdef __WIN32
-	gl_funcs_init();
-#endif
+
+    if(!init_opengl) {
+        ERROR_MSG("OpenGL not initialised\n");
+        return 0;
+    }
+
+    log_init();
 	
 	TRACE_MSG("init base render system\n");
 	
-	TRACE_MSG("init noise...\n");
+    TRACE_MSG("init noise\n");
 	noise_init();
-	//snoise3d_init_file("snoise3d_256.n", vec3ui(256, 256, 256));
-	TRACE_MSG("noise initiliazed\n");
 	
 	glViewport(0, 0, window_width, window_height);
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -224,9 +241,7 @@ int render_init(void)
 	glDepthFunc(GL_LESS);
 	glEnable(GL_DEPTH_CLAMP);
 	
-	glGetIntegerv(GL_MAJOR_VERSION, &gl_major);
-	glGetIntegerv(GL_MINOR_VERSION, &gl_minor);
-	DEBUG_MSG("OpenGL version: %i.%i\n", gl_major, gl_minor);
+    DEBUG_MSG("OpenGL version: %s\n", glGetString(GL_VERSION));
 	DEBUG_MSG("GLSL version: %s\n", (char*) glGetString(GL_SHADING_LANGUAGE_VERSION));
 	
 	// настраиваем основную камеру
@@ -250,8 +265,8 @@ int render_init(void)
 	strcpy(str_function, default_func);
 	
 	// настраиваем и создаем скалярное поле
-	render_set_volume_size(vec3ui(128, 128, 128));
-	render_set_grid_size(vec3ui(40, 40, 40));
+    render_set_volume_size(vec3ui(128, 128, 128), 1);
+    render_set_grid_size(vec3ui(64, 64, 64));
 	render_update_volume_tex();
 	
 	CHECK_GL_ERRORS();
@@ -313,7 +328,7 @@ static float volume_func(vector3f pos)
 	}
 	
 	// получаем вычисленное значение d
-	return float_vars[0].value; // d
+    return float_vars[0].value;
 }
 
 void render_set_grid_size(vector3ui grid_size_v)
@@ -324,9 +339,9 @@ void render_set_grid_size(vector3ui grid_size_v)
 	update_volume_vbos();
 }
 
-void render_set_volume_size(vector3ui volume_size_v)
+void render_set_volume_size(vector3ui volume_size_v, int rebuild)
 {
-	volume_size = volume_size_v;
+    volume_size = vec3ui_add_c(volume_size_v, 1);
 	volume_step = vec3f_div(vec3f(1.0f, 1.0f, 1.0f), vec3ui_to_vec3f(volume_size));
 	
 	if(volume) {
@@ -336,65 +351,67 @@ void render_set_volume_size(vector3ui volume_size_v)
 	
 	volume = (float*) malloc(sizeof(float) * volume_size.x*volume_size.y*volume_size.z);
 	
-	// проверяем количество потоков и решаем использовать ли многопоточность
-	if(num_threads >= 2) {
-		
-		// устанавливаем кол-во потоков
-		omp_set_num_threads(num_threads);
-		
-		// запускаем паралельно данный участок кода
-		#pragma omp parallel firstprivate(volume_size) shared(volume, str_function)
-		{
-			int i = omp_get_thread_num();
-			
-			parser_t tparser;
-			parser_create(&tparser);
-			parser_clean(&tparser);
-			
-			// вычисляем интервал вычислений для данного потока
-			vector3ui begin = vec3ui(0, 0, volume_size.z * ((float) (i) / (float) omp_get_num_threads()));
-			vector3ui end = vec3ui(volume_size.x, volume_size.y, volume_size.z * ((float) (i+1) / (float) omp_get_num_threads()));
-			
-			float_var_value_t float_vars[] = 
-				{
-					{1, 0.0f}, // d
-					{2, 0.0f}, // x
-					{3, 0.0f}, // y
-					{4, 0.0f}, // z
-					{0, 0.0f}
-				};
-			
-			// проходимся по соотвествующему участку массива
-			for(unsigned k = begin.z; k < end.z; k++) {
-				for(unsigned j = begin.y; j < end.y; j++) {
-					for(unsigned i = begin.x; i < end.x; i++) {
-						
-						float_vars[0].value = 0.0f; float_vars[1].value = i; 
-						float_vars[2].value = j; float_vars[3].value = k;
-						
-						if(parser_parse_text(&tparser, str_function, float_vars) == 0) {
-							volume[i + j*volume_size.x + k*volume_size.x*volume_size.y] = float_vars[0].value;
-						}
-					}
-				}
-			}
-			
-			parser_clean(&tparser);
-			
-		}
+    if(rebuild) {
+        // проверяем количество потоков и решаем использовать ли многопоточность
+        if(num_threads >= 2) {
 
-	} else {
-		// проходимся по всему массиву и устанавливаем соотвествующее функции значение
-		for(unsigned k = 0; k < volume_size.z; k++) {
-			for(unsigned j = 0; j < volume_size.y; j++) {
-				for(unsigned i = 0; i < volume_size.x; i++) {
-					volume[i + j*volume_size.x + k*volume_size.x*volume_size.y] = volume_func(vec3f(i, j, k));
-				}
-			}
-		}
-	}
-	
-	update_volume_vbos();
+            // устанавливаем кол-во потоков
+            omp_set_num_threads(num_threads);
+
+            // запускаем паралельно данный участок кода
+            #pragma omp parallel firstprivate(volume_size) shared(volume, str_function)
+            {
+                int i = omp_get_thread_num();
+
+                parser_t tparser;
+                parser_create(&tparser);
+                parser_clean(&tparser);
+
+                // вычисляем интервал вычислений для данного потока
+                vector3ui begin = vec3ui(0, 0, volume_size.z * ((float) (i) / (float) omp_get_num_threads()));
+                vector3ui end = vec3ui(volume_size.x, volume_size.y, volume_size.z * ((float) (i+1) / (float) omp_get_num_threads()));
+
+                float_var_value_t float_vars[] =
+                    {
+                        {1, 0.0f}, // d
+                        {2, 0.0f}, // x
+                        {3, 0.0f}, // y
+                        {4, 0.0f}, // z
+                        {0, 0.0f}
+                    };
+
+                // проходимся по соотвествующему участку массива
+                for(unsigned k = begin.z; k < end.z; k++) {
+                    for(unsigned j = begin.y; j < end.y; j++) {
+                        for(unsigned i = begin.x; i < end.x; i++) {
+
+                            float_vars[0].value = 0.0f; float_vars[1].value = i;
+                            float_vars[2].value = j; float_vars[3].value = k;
+
+                            if(parser_parse_text(&tparser, str_function, float_vars) == 0) {
+                                volume[i + j*volume_size.x + k*volume_size.x*volume_size.y] = float_vars[0].value;
+                            }
+                        }
+                    }
+                }
+
+                parser_clean(&tparser);
+
+            }
+
+        } else {
+            // проходимся по всему массиву и устанавливаем соотвествующее функции значение
+            for(unsigned k = 0; k < volume_size.z; k++) {
+                for(unsigned j = 0; j < volume_size.y; j++) {
+                    for(unsigned i = 0; i < volume_size.x; i++) {
+                        volume[i + j*volume_size.x + k*volume_size.x*volume_size.y] = volume_func(vec3f(i, j, k));
+                    }
+                }
+            }
+        }
+
+        update_volume_vbos();
+    }
 }
 
 void render_update(double last_frame_time)
@@ -585,23 +602,24 @@ void update_camera(double t)
 }
 
 void render_draw(void)
-{	
-	GLint size = 0;
-	
+{
 	IF_FAILED(init);
 	
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
-	glActiveTexture(GL_TEXTURE0);
-	//texture_bind(&volume_texture);
+    glActiveTexture(GL_TEXTURE0);
+    texture_bind(&volume_texture);
 
 	shader_program_bind(&program);
 	
-	glBindVertexArray(vao);
+    glBindVertexArray(vao);
+    glEnableVertexAttribArray(attr_position);
 	
-	glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &size);
-	glDrawElements(GL_TRIANGLES, size / sizeof(unsigned int), GL_UNSIGNED_INT, NULL);
-	
+    glDrawElements(GL_TRIANGLES, num_elements, GL_UNSIGNED_INT, NULL);
+
+    glDisableVertexAttribArray(attr_position);
+    glBindVertexArray(0);
+
 	shader_program_unbind(&program);
 }
 
@@ -642,11 +660,13 @@ void render_destroy(void)
 	}
 	
 	init = 0;
+
+    log_close();
 }
 
 int render_set_function_text(const char *function_text)
 {	
-	IF_FAILED_RET(function_text, -100);
+    IF_FAILED_RET(init && function_text, -100);
 	
 	float_var_value_t float_vars[] = 
 		{
@@ -681,7 +701,7 @@ int render_set_function_text(const char *function_text)
 
 int render_export_obj(char **buffer)
 {
-	IF_FAILED0(init);
+    IF_FAILED0(init && buffer);
 	
 	int element_buffer_size = 0, vertex_buffer_size = 0, normal_buffer_size = 0;
 	GLuint vertex_vbo, index_vbo, normal_vbo;
@@ -692,15 +712,15 @@ int render_export_obj(char **buffer)
 	glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &last_array_buffer);	
 	glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &last_element_array_buffer);
 	
-	glGenBuffers(1, &vertex_vbo);
-	glGenBuffers(1, &index_vbo);
-	glGenBuffers(1, &normal_vbo);
+    glGenBuffers(1, &vertex_vbo);
+    glGenBuffers(1, &index_vbo);
+    glGenBuffers(1, &normal_vbo);
 	
 	if(!marching_cubes_create_vbos(volume, 
 								   volume_size, 
 								   grid_size, 
-								   isolevel, vertex_vbo, index_vbo, normal_vbo, 
-								   volume_func)) {
+                                   isolevel, vertex_vbo, index_vbo, normal_vbo,
+                                   volume_func, NULL)) {
 		
 		ERROR_MSG("Marching Cubes: nothing to generate");
 		
@@ -736,7 +756,8 @@ int render_export_obj(char **buffer)
 	glBindBuffer(GL_ARRAY_BUFFER, normal_vbo);
 	glGetBufferSubData(GL_ARRAY_BUFFER, 0, normal_buffer_size, normal_data);
 	
-	*buffer = (char*) malloc(sizeof(char) * (element_buffer_size*4 + vertex_buffer_size*4 + normal_buffer_size*4));
+    // выделяем как можно больше памяти, чтобы вместились все данные
+    *buffer = (char*) malloc(sizeof(char) * (element_buffer_size + vertex_buffer_size + normal_buffer_size)*8);
 	*buffer[0] = '\0';
 	
 	strcat(*buffer, "# Generated via VRender\n");
@@ -799,8 +820,8 @@ int render_export_obj(char **buffer)
 	free(normal_data);
 	free(temp);
 	
-	glDeleteBuffers(1, &vertex_vbo);
-	glDeleteBuffers(1, &index_vbo);
+    glDeleteBuffers(1, &vertex_vbo);
+    glDeleteBuffers(1, &index_vbo);
 	glDeleteBuffers(1, &normal_vbo);
 	
 	glBindBuffer(GL_ARRAY_BUFFER, last_array_buffer);
@@ -913,4 +934,64 @@ void render_set_camera_fov(float fov)
 	camera_fov = fov;
 	
 	camera_set_fov(&camera, camera_fov);
+}
+
+void render_get_opengl_version(int *major, int *minor)
+{
+    IF_FAILED(init_opengl);
+
+    int gl_major = 0, gl_minor = 0;
+    const GLubyte *str = glGetString(GL_VERSION);
+
+    char *ptr = (char*) str;
+
+    int flag_major = 0, flag_minor = 0;
+    while(*ptr != '\0') {
+
+        if(isalnum(*ptr)) {
+            if(*(ptr+1) == '.') {
+                if(!flag_major) {
+                   gl_major = atoi(&(*ptr));
+                   flag_major = 1;
+                } else if(!flag_minor) {
+                   gl_minor = atoi(&(*ptr));
+                   flag_minor = 1;
+                }
+            } else {
+                if(!flag_minor) {
+                   gl_minor = atoi(&(*ptr));
+                   flag_minor = 1;
+                }
+            }
+        }
+
+        if(flag_major && flag_minor)
+            break;
+
+        ptr++;
+    }
+
+    if(major)
+        *major = gl_major;
+    if(minor)
+        *minor = gl_minor;
+}
+
+void render_get_current_volume(float **volume_ptr, vector3ui *size)
+{
+    IF_FAILED(init && volume_ptr != NULL && size != NULL);
+
+    *volume_ptr = volume;
+    *size = volume_size;
+}
+
+void render_set_external_volume(float *volume_ptr, vector3ui size)
+{
+    IF_FAILED(init && volume_ptr);
+
+    render_set_volume_size(size, 0);
+    memcpy(volume, volume_ptr, sizeof(float) * size.x*size.y*size.z);
+
+    render_update_volume_tex();
+    update_volume_vbos();
 }

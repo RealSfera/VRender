@@ -305,7 +305,7 @@
                   <number>200</number>
                  </property>
                  <property name="value">
-                  <number>40</number>
+                  <number>64</number>
                  </property>
                 </widget>
                </item>
@@ -331,7 +331,7 @@
                   <number>200</number>
                  </property>
                  <property name="value">
-                  <number>40</number>
+                  <number>64</number>
                  </property>
                 </widget>
                </item>
@@ -357,7 +357,7 @@
                   <number>200</number>
                  </property>
                  <property name="value">
-                  <number>40</number>
+                  <number>64</number>
                  </property>
                 </widget>
                </item>
@@ -1853,13 +1853,21 @@
      <x>0</x>
      <y>0</y>
      <width>860</width>
-     <height>25</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu">
     <property name="title">
      <string>Файл</string>
     </property>
+    <widget class="QMenu" name="menu_3">
+     <property name="title">
+      <string>Скалярное поле</string>
+     </property>
+     <addaction name="volume_import_action"/>
+     <addaction name="volume_export_action"/>
+    </widget>
+    <addaction name="menu_3"/>
     <addaction name="obj_export_action"/>
     <addaction name="separator"/>
     <addaction name="exit_action"/>
@@ -1913,6 +1921,22 @@
   <action name="program_help_action">
    <property name="text">
     <string>Справка по программе</string>
+   </property>
+  </action>
+  <action name="volume_import_action">
+   <property name="text">
+    <string>Импорт</string>
+   </property>
+   <property name="toolTip">
+    <string>Импорт скалярного поля</string>
+   </property>
+  </action>
+  <action name="volume_export_action">
+   <property name="text">
+    <string>Экспорт</string>
+   </property>
+   <property name="toolTip">
+    <string>Экспорт скалярного поля</string>
    </property>
   </action>
  </widget>

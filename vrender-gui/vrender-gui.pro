@@ -29,3 +29,5 @@ FORMS    += ui/mainwindow.ui \
             ui/helpdialog.ui
 
 RESOURCES += res/app.qrc
+
+win32: RC_FILE = res/vrender.rc

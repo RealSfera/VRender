@@ -20,7 +20,8 @@
 #include "ui_mainwindow.h"
 #include "glwindow.h"
 
-#define VERSION STRINGIFY(0.9.2)
+#define VERSION STRINGIFY(1.0.0)
+#define MAGIC_NUMBER 0xE0E0A1B9
 
 MainWindow::MainWindow(QWidget *parent) :
 	QMainWindow(parent),
@@ -33,6 +34,8 @@ MainWindow::MainWindow(QWidget *parent) :
 	QFile *build_lang_xhtml = new QFile(":/build_help");
 	if(!build_lang_xhtml->exists()) {
 		ERROR_MSG(":/build_help not exist\n");
+        QMessageBox::critical(this, QString::fromUtf8("Ошибка"),
+                              QString::fromUtf8("Ошибка при инициализации справки по построению!"));
 		exit(-99);
 	}
 	build_lang_xhtml->open(QFile::ReadOnly);
@@ -46,6 +49,8 @@ MainWindow::MainWindow(QWidget *parent) :
 	QFile *prog_help_xhtml = new QFile(":/prog_help");
 	if(!prog_help_xhtml->exists()) {
 		ERROR_MSG(":/prog_help not exist\n");
+        QMessageBox::critical(this, QString::fromUtf8("Ошибка"),
+                              QString::fromUtf8("Ошибка инициализации при справки по программе!"));
 		exit(-99);
 	}
 	prog_help_xhtml->open(QFile::ReadOnly);
@@ -103,7 +108,7 @@ void MainWindow::timerEvent(QTimerEvent *)
 void MainWindow::on_build_start_clicked()
 {
 	// устанавливаем текст функции, параметры volume и запускаем построитель
-	if(strcmp(ui->build_function_text->toPlainText().toAscii().data(), "")) {
+    if(!ui->build_function_text->toPlainText().isEmpty()) {
 		
 		QMessageBox *builder_msg = new QMessageBox(this);
 		builder_msg->setAttribute(Qt::WA_DeleteOnClose);
@@ -314,12 +319,17 @@ void MainWindow::on_obj_export_action_triggered()
 		if(!render_export_obj(&buffer)) {
 			QMessageBox::critical(this, 
 								  QString::fromUtf8("Ошибка экспорта"), 
-								  QString::fromUtf8("Ошибка экспортировании данных текущего объекта!"));
+                                  QString::fromUtf8("Ошибка при экспортировании данных текущего объекта!"));
 			if(buffer)
 				free(buffer);
 			return;
 		}
 		
+        if( !filename.endsWith(".obj", Qt::CaseInsensitive) ) {
+            filename += ".obj";
+        }
+
+
 		QFile file(filename);
 		
 		if(!file.open(QIODevice::WriteOnly)) {
@@ -329,12 +339,160 @@ void MainWindow::on_obj_export_action_triggered()
 			free(buffer);
 			return;
 		}
-				
+
 		QTextStream text_stream(&file);
 		text_stream << buffer;
 		text_stream.flush();
 		file.close();
 		
 		free(buffer);
+
+        QMessageBox::information(this,
+                              QString::fromUtf8("Экспорт в Wavefront"),
+                              QString::fromUtf8("Объект успешно экспортирован в файл."));
 	}
+}
+
+void MainWindow::on_volume_export_action_triggered()
+{
+    QString filename = QFileDialog::getSaveFileName(this,
+                                                    QString::fromUtf8("Экспорт скалярного поля (.vvol)"),
+                                                    "",
+                                                    QString::fromUtf8("VRender Volume (*.vvol)"));
+
+    if(filename != "") {
+        float *volume = NULL;
+
+        vector3ui size;
+        render_get_current_volume(&volume, &size);
+
+        if(!volume) {
+            QMessageBox::critical(this,
+                                  QString::fromUtf8("Ошибка экспорта"),
+                                  QString::fromUtf8("Ошибка при экспортировании данных скалярного поля!"));
+            return;
+        }
+
+        if(!filename.endsWith(".vvol", Qt::CaseInsensitive)) {
+            filename += ".vvol";
+        }
+
+        QFile file(filename);
+
+        if(!file.open(QIODevice::WriteOnly)) {
+            QMessageBox::critical(this,
+                                  QString::fromUtf8("Ошибка экспорта"),
+                                  QString::fromUtf8("Ошибка при открытии файла для экспорта!"));
+            return;
+        }
+
+        // структура:
+        // MAGIC_NUMBER
+        // VRender
+        // Версия текстом
+        // Размер: size.x size.y size.z
+        // Данные
+
+        QDataStream data_stream(&file);
+        data_stream << (quint32) MAGIC_NUMBER;
+        data_stream << QString("VRender");
+        data_stream << QString(VERSION);
+        data_stream << size.x; data_stream << size.y; data_stream << size.z;
+        data_stream.writeRawData((const char*) volume, sizeof(float) * size.x*size.y*size.z);
+        file.close();
+
+        QMessageBox::information(this,
+                              QString::fromUtf8("Экспорт скалярного поля"),
+                              QString::fromUtf8("Скалярноное поле успешно экспортировано в файл."));
+    }
+}
+
+void MainWindow::on_volume_import_action_triggered()
+{
+    QString filename = QFileDialog::getOpenFileName(this,
+                                                    QString::fromUtf8("Импорт скалярного поля (.vvol)"),
+                                                    "",
+                                                    QString::fromUtf8("VRender Volume (*.vvol)"));
+
+    if(filename != "") {
+        if(!filename.endsWith(".vvol", Qt::CaseInsensitive)) {
+            filename += ".vvol";
+        }
+
+
+        QFile file(filename);
+
+        if(!file.open(QIODevice::ReadOnly)) {
+            QMessageBox::critical(this,
+                                  QString::fromUtf8("Ошибка импорта"),
+                                  QString::fromUtf8("Ошибка при открытии файла для импорта!"));
+            return;
+        }
+
+        // структура:
+        // MAGIC_NUMBER
+        // VRender
+        // Версия текстом
+        // Размер: size.x size.y size.z
+        // Данные
+
+        QDataStream data_stream(&file);
+
+        quint32 magic = 0;
+        data_stream >> magic;
+
+        if(magic != (quint32) MAGIC_NUMBER) {
+            QMessageBox::critical(this,
+                                  QString::fromUtf8("Ошибка импорта"),
+                                  QString::fromUtf8("Неверный формат файла. [0x01]"));
+            file.close();
+            return;
+        }
+
+        QString vstring;
+        data_stream >> vstring;
+        if(vstring != QString("VRender")) {
+            QMessageBox::critical(this,
+                                  QString::fromUtf8("Ошибка импорта"),
+                                  QString::fromUtf8("Неверный формат файла. [0x02]"));
+            file.close();
+            return;
+        }
+
+        QString version;
+        data_stream >> version;
+
+        // в будущих версиях будет добавлена обратная совместимость
+        if(version != QString(VERSION)) {
+            QMessageBox::critical(this,
+                                  QString::fromUtf8("Ошибка импорта"),
+                                  QString::fromUtf8("Неверная версия импортируемого файла."));
+            file.close();
+            return;
+        }
+
+        vector3ui size;
+        data_stream >> size.x; data_stream >> size.y; data_stream >> size.z;
+
+        float *volume = NULL;
+        volume = new float[size.x*size.y*size.z];
+
+        data_stream.readRawData((char*) volume, sizeof(float) * size.x*size.y*size.z);
+        file.close();
+
+        render_set_external_volume(volume, size);
+        delete [] volume;
+
+        ui->volume_size_value_x->setValue(size.x);
+        ui->volume_size_value_y->setValue(size.y);
+        ui->volume_size_value_z->setValue(size.z);
+        main_gl_window->set_volume_size(size);
+
+        ui->build_function_text->setPlainText("");
+
+        QMessageBox::information(this,
+                              QString::fromUtf8("Импорт скалярного поля"),
+                              QString::fromUtf8("Скалярноное поле успешно импортировано из файла."));
+
+    }
 }

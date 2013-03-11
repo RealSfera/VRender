@@ -31,7 +31,8 @@ set(SOURCES
 		  ${SRCDIR}/input.c
           ${SRCDIR}/parser.c
 		  ${SRCDIR}/render/texture.c 
-          ${SRCDIR}/render/marching_cubes.c )
+		  ${SRCDIR}/render/marching_cubes.c
+		  ${SRCDIR}/log.c )
 set(HEADERS
 		  ${INCLUDEDIR}/math/dmath.h
 		  ${INCLUDEDIR}/math/vector.h
@@ -49,11 +50,12 @@ set(HEADERS
 		  ${INCLUDEDIR}/utils.h
           ${INCLUDEDIR}/parser.h
           ${INCLUDEDIR}/marching_cubes.h 
-          ${INCLUDEDIR}/main_shader.h )
+		  ${INCLUDEDIR}/main_shader.h
+		  ${INCLUDEDIR}/log.h )
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL Windows)
-    set(SOURCES ${SOURCES} ${SRCDIR}/gl_funcs.c )
-    set(HEADERS ${HEADERS} ${INCLUDEDIR}/gl_funcs.h )
+	set(SOURCES ${SOURCES} ${SRCDIR}/gl_funcs.c )
+	set(HEADERS ${HEADERS} ${INCLUDEDIR}/gl_funcs.h )
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCC)

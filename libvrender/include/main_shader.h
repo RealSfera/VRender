@@ -95,7 +95,7 @@ void main(void) { \n
    \n
    vec3 n = normalize(gradient) * model_inv; \n
    \n
-   if(!gl_FrontFacing) { \n
+   if(gl_FrontFacing == false) { \n
 		n = -n; \n
 		material_color = material_back_color; \n
    } else { \n

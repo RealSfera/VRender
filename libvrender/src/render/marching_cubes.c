@@ -19,6 +19,7 @@
 #include "common.h"
 #include "marching_cubes.h"
 #include "math/dmath.h"
+#include "render.h"
 #include <string.h>
 
 // таблица граней
@@ -321,7 +322,7 @@ vector3f marching_cubes_calculate_normal(const float *volume, vector3ui size,
 {
 	vector3f result;
 	
-#define _function(v) (*function)(vec3f_mult(v, vec3ui_to_vec3f(size)))
+#define _function(v) (*function)(vec3f_mult((v), vec3ui_to_vec3f(size)))
 	
 	// вычисляем градиент в точке position (фактически это вычисление частных производных)
 	result.x = (_function(vec3f(position.x + delta.x, position.y, position.z)) - 
@@ -369,7 +370,7 @@ int marching_cubes_polygonise(cell_t cell, float isolevel, vector3f *out_vertice
 
 	vector3f new_vertices[12];
 #define VERTEX(i, v1, v2) \
-	new_vertices[(i)] = vertices_lerp(isolevel, cell.vertices_positions[(v1)], cell.vertices_values[(v1)], cell.vertices_positions[(v2)], cell.vertices_values[v2])
+    new_vertices[(i)] = vertices_lerp(isolevel, cell.vertices_positions[(v1)], cell.vertices_values[(v1)], cell.vertices_positions[(v2)], cell.vertices_values[(v2)])
 
 	// определяем какие грани относятся к данной конфигурации
 	// и уставливаем соотвествующую вершину между вершинами этих граней
@@ -425,7 +426,7 @@ int marching_cubes_polygonise(cell_t cell, float isolevel, vector3f *out_vertice
 		out_triangles[triangles_count].indices[2] = indices[(unsigned) mc_tri_table[cube][i + 0]];
 		out_triangles[triangles_count].indices[1] = indices[(unsigned) mc_tri_table[cube][i + 1]];
 		out_triangles[triangles_count].indices[0] = indices[(unsigned) mc_tri_table[cube][i + 2]];
-		triangles_count++;
+        triangles_count++;
 	}
 	
 	if(number_of_vertices)
@@ -445,23 +446,23 @@ int marching_cubes_create(const float *volume, vector3ui volume_size, vector3ui 
 	
 	unsigned short i = 0, j = 0, k = 0;
 	vector3ui value_step = vec3ui_div(volume_size, grid_size);
-	vector3f  pos_step = vec3f_div(vec3f(1.0f, 1.0f, 1.0f), vec3f(grid_size.x, grid_size.y, grid_size.z));
+    vector3f  pos_step = vec3f_div(vec3f(1.0f, 1.0f, 1.0f), vec3f(grid_size.x, grid_size.y, grid_size.z));
 	unsigned int vertices_count = 0, triangles_count = 0;
 	unsigned index_offset = 0;
 	
 	
 	cell_t cell;
-	vector3f vertices[16];
-	triangle_t triangles[6];
+    vector3f vertices[15];
+    triangle_t triangles[5];
 	unsigned short nv = 0, nt = 0;
 	
 	// проходим по всему массиву volume
-	for(k = 0; k < grid_size.z - 1; k++) {
-		for(j = 0; j < grid_size.y - 1; j++) {
-			for(i = 0; i < grid_size.x - 1; i++) {
+    for(k = 0; k < grid_size.z - 1; k++) {
+        for(j = 0; j < grid_size.y - 1; j++) {
+            for(i = 0; i < grid_size.x - 1; i++) {
 				
 				// вычисялем смещения для вершин и для изо-значений
-				vector3f  pos_offset   = vec3f_mult(vec3f(i, j, k), pos_step);
+                vector3f  pos_offset   = vec3f_mult(vec3f(i, j, k), pos_step);
 				vector3ui value_offset = vec3ui_mult(vec3ui(i, j, k), value_step);
 				
 				#define VOLUME(v) volume[(v).x + (v).y*volume_size.x + (v).z*volume_size.x*volume_size.y]
@@ -489,59 +490,51 @@ int marching_cubes_create(const float *volume, vector3ui volume_size, vector3ui 
 				cell.vertices_positions[6] = vec3f_add(pos_offset, vec3f(pos_step.x, pos_step.y, pos_step.z));
 				cell.vertices_values[6]    = VOLUME(vec3ui_add(value_offset, vec3ui(value_step.x, value_step.y, value_step.z)));
 				
-				cell.vertices_positions[7] = vec3f_add(pos_offset, vec3f(0.0f, pos_step.y, pos_step.z));
-				cell.vertices_values[7]    = VOLUME(vec3ui_add(value_offset, vec3ui(0, value_step.y, value_step.z)));
+                cell.vertices_positions[7] = vec3f_add(pos_offset, vec3f(0.0f, pos_step.y, pos_step.z));
+                cell.vertices_values[7]    = VOLUME(vec3ui_add(value_offset, vec3ui(0, value_step.y, value_step.z)));
 				
-				#undef VOLUME
+                #undef VOLUME
 				
 				// полигонизируем ячейку и получаем набор из вершин и индексов
-				int result = marching_cubes_polygonise(cell, isolevel, vertices, &nv, triangles, &nt);
+                int result = marching_cubes_polygonise(cell, isolevel, vertices, &nv, triangles, &nt);
 				
 				if(result == 0)
 					continue;
-				else if(result == -1)
-					return -1;
-				
+                else if(result == -1)
+                    return -1;
+
 				// заполняем массив out_vertices новыми вершинами
-				if(out_vertices) {
-					int v = 0;
-					for(v = 0; v < nv-1; v++) {
-						out_vertices[vertices_count] = vertices[v];
-						vertices_count++;
-					}
-				} else {
-					vertices_count += nv;
-				}
+                int v = 0;
+                for(v = 0; v < nv-1; v++) {
+                    out_vertices[vertices_count] = vertices[v];
+                    vertices_count++;
+                }
 				
 				// заполняем out_triangles новыми индексами треугольников
-				if(out_triangles) {
-					int t = 0;
-					triangle_t triangle;
-					int max_temp = 0, max_temp_2 = 0;
-					for(t = 0; t < nt-1; t++) {
-						triangle = triangles[t];
-						
-						// смещаем индексы
-						triangle.indices[0] += index_offset;
-						triangle.indices[1] += index_offset;
-						triangle.indices[2] += index_offset;
-						
-						// ищем максимальный индекс
-						max_temp = math_max(math_max(triangle.indices[0], triangle.indices[1]), triangle.indices[2]);
-						max_temp_2 = math_max(max_temp_2, max_temp);
-						
-						out_triangles[triangles_count] = triangle;
-						triangles_count++;
-					}
-					
-					// смещение = максимальный индекс + 1
-					index_offset = max_temp_2 + 1;
-				} else {
-					triangles_count += nt;
-				}
+                int t = 0;
+                triangle_t triangle;
+                int max_temp = 0, max_temp_2 = 0;
+                for(t = 0; t < nt-1; t++) {
+                    triangle = triangles[t];
+
+                    // смещаем индексы
+                    triangle.indices[0] += index_offset;
+                    triangle.indices[1] += index_offset;
+                    triangle.indices[2] += index_offset;
+
+                    // ищем максимальный индекс
+                    max_temp = math_max(math_max(triangle.indices[0], triangle.indices[1]), triangle.indices[2]);
+                    max_temp_2 = math_max(max_temp_2, max_temp);
+
+                    out_triangles[triangles_count] = triangle;
+                    triangles_count++;
+                }
+
+                // смещение = максимальный индекс + 1
+                index_offset = max_temp_2 + 1;
 				
-			}
-		}
+            }
+        }
 	}
 	
 	if(number_of_vertices)
@@ -554,25 +547,24 @@ int marching_cubes_create(const float *volume, vector3ui volume_size, vector3ui 
 
 int marching_cubes_create_vbos(const float *volume, vector3ui volume_size, 
 							  vector3ui grid_size, float isolevel,
-							  GLuint vertex_vbo, GLuint index_vbo, GLuint normal_vbo, 
-							  float (*function)(vector3f pos))
+                              GLuint vertex_vbo, GLuint index_vbo, GLuint normal_vbo,
+                              float (*function)(vector3f pos), unsigned *num_elements)
 {
 	int result = 0;
-	unsigned n_vertices = 0, n_triangles = 0;
+    unsigned n_vertices = 0, n_triangles = 0;
 	vector3f *vertices = NULL;
 	triangle_t *triangles = NULL;
 	GLint last_array_buffer, last_element_array_buffer;
 	
-	IF_FAILED_RET(volume && (vertex_vbo > 0) && (index_vbo > 0), -1);
+    IF_FAILED_RET(volume && (vertex_vbo > 0) && (index_vbo > 0), -1);
 
 	// выделяем память под вершины и индексы
-	// возможно сделано в лоб, но зато просто и стабильно :)
-	vertices = (vector3f*) malloc(sizeof(vector3f) * volume_size.x*volume_size.y*volume_size.z * 15);
-	triangles = (triangle_t*) malloc(sizeof(triangle_t) * volume_size.x*volume_size.y*volume_size.z * 5);
+    vertices = (vector3f*) malloc(sizeof(vector3f) * volume_size.x*volume_size.y*volume_size.z * 15);
+    triangles = (triangle_t*) malloc(sizeof(triangle_t) * volume_size.x*volume_size.y*volume_size.z * 5);
 
-	// полигинизируем
-	result = marching_cubes_create(volume, volume_size, grid_size, isolevel, vertices, &n_vertices, triangles, &n_triangles);
-	
+    // полигонизируем
+    result = marching_cubes_create(volume, volume_size, grid_size, isolevel, vertices, &n_vertices, triangles, &n_triangles);
+
 	if(result == -1) {
 		free(triangles);
 		free(vertices);
@@ -580,16 +572,19 @@ int marching_cubes_create_vbos(const float *volume, vector3ui volume_size,
 		return -1;
 	}
 	
-	glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &last_array_buffer);	
-	glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &last_element_array_buffer);
+    glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &last_array_buffer);
+    glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &last_element_array_buffer);
 	
 	// загружаем вершины
-	glBindBuffer(GL_ARRAY_BUFFER, vertex_vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vector3f) * n_vertices, (const GLvoid*) vertices, GL_STATIC_DRAW);
-	
+    glBindBuffer(GL_ARRAY_BUFFER, vertex_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vector3f) * n_vertices, (const GLvoid*) vertices, GL_DYNAMIC_DRAW);
+
 	// загружаем индексы
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_vbo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(triangle_t) * n_triangles, (const GLvoid*) triangles, GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_vbo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(triangle_t) * n_triangles, (const GLvoid*) triangles, GL_DYNAMIC_DRAW);
+
+    if(num_elements)
+        *num_elements = n_triangles * 3;
 	
 	// если требуется, то вычисляем нормали для каждой вершины и записываем их в normal_vbo
 	if(normal_vbo != 0) {
@@ -600,18 +595,18 @@ int marching_cubes_create_vbos(const float *volume, vector3ui volume_size,
 		
 		for(unsigned i = 0; i < n_vertices; i++) {
 			normals[i] = marching_cubes_calculate_normal(volume, volume_size, delta, vertices[i], function);
-		}
+        }
 		
-		glBufferData(GL_ARRAY_BUFFER, sizeof(vector3f) * n_vertices, (const GLvoid*) normals, GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vector3f) * n_vertices, (const GLvoid*) normals, GL_STATIC_DRAW);
 		
 		free(normals);
 	}
 	
-	free(triangles);
-	free(vertices);
+    free(triangles);
+    free(vertices);
 	
-	glBindBuffer(GL_ARRAY_BUFFER, last_array_buffer);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, last_element_array_buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, last_array_buffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, last_element_array_buffer);
 	
 	return 1;
 }
