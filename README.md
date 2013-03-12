@@ -9,11 +9,11 @@ VRender - программа для построения и визуализац
 Есть возможность экспорта полученного объекта в файл формата Wavefront (.obj), при этом экспортируется объект полигонизированный с текущим изо-уровнем.
 
 ####Ссылки на скачивание
-#####Версия 1.0.0
+#####Версия 1.0.1
 ######Linux
-https://www.dropbox.com/s/r6143rksdg8q5ef/vrender-1.0.0-linux.zip
+https://www.dropbox.com/s/npsoy0drv1vajw1/vrender-1.0.1-linux.zip
 ######Windows
-https://www.dropbox.com/s/6fhtwhuh38wik7e/vrender-1.0.0-win.zip
+https://www.dropbox.com/s/vgzx4na10af5lxv/vrender-1.0.1-win.zip
 
 ####Поддерживаемые платформы
 Linux, Windows
