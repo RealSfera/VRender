@@ -21,7 +21,7 @@ include_directories(${INCLUDEDIR})
 set(SOURCES 
 		  ${SRCDIR}/math/matrix.c
 		  ${SRCDIR}/math/quaternion.c
-          ${SRCDIR}/math/noise.c
+		  ${SRCDIR}/math/noise.c
 		  ${SRCDIR}/render/render.c
 		  ${SRCDIR}/render/camera.c
 		  ${SRCDIR}/render/shader.c
@@ -29,7 +29,7 @@ set(SOURCES
 		  ${SRCDIR}/render/shader_program_file.c
 		  ${SRCDIR}/utils.c
 		  ${SRCDIR}/input.c
-          ${SRCDIR}/parser.c
+		  ${SRCDIR}/parser.c
 		  ${SRCDIR}/render/texture.c 
 		  ${SRCDIR}/render/marching_cubes.c
 		  ${SRCDIR}/log.c )
@@ -38,7 +38,7 @@ set(HEADERS
 		  ${INCLUDEDIR}/math/vector.h
 		  ${INCLUDEDIR}/math/matrix.h
 		  ${INCLUDEDIR}/math/quaternion.h
-          ${INCLUDEDIR}/math/noise.h
+		  ${INCLUDEDIR}/math/noise.h
 		  ${INCLUDEDIR}/common.h
 		  ${INCLUDEDIR}/camera.h
 		  ${INCLUDEDIR}/shader.h
@@ -48,8 +48,8 @@ set(HEADERS
 		  ${INCLUDEDIR}/render.h
 		  ${INCLUDEDIR}/input.h
 		  ${INCLUDEDIR}/utils.h
-          ${INCLUDEDIR}/parser.h
-          ${INCLUDEDIR}/marching_cubes.h 
+		  ${INCLUDEDIR}/parser.h
+		  ${INCLUDEDIR}/marching_cubes.h
 		  ${INCLUDEDIR}/main_shader.h
 		  ${INCLUDEDIR}/log.h )
 

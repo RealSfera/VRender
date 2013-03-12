@@ -200,7 +200,7 @@ static void update_volume_vbos(void)
 	if(!marching_cubes_create_vbos(volume,
 								   volume_size, 
 								   grid_size, 
-                                   isolevel, vbo[0], vbo[1], 0, NULL, &num_elements)) {
+								   isolevel, vbo[0], vbo[1], 0, NULL, &num_elements)) {
 		
 		ERROR_MSG("Marching Cubes: nothing to generate");
 	}
@@ -352,66 +352,66 @@ void render_set_volume_size(vector3ui volume_size_v, int rebuild)
 	volume = (float*) malloc(sizeof(float) * volume_size.x*volume_size.y*volume_size.z);
 	
 	if(rebuild) {
-        // проверяем количество потоков и решаем использовать ли многопоточность
-        if(num_threads >= 2) {
+		// проверяем количество потоков и решаем использовать ли многопоточность
+		if(num_threads >= 2) {
 
-            // устанавливаем кол-во потоков
-            omp_set_num_threads(num_threads);
+			// устанавливаем кол-во потоков
+			omp_set_num_threads(num_threads);
 
-            // запускаем паралельно данный участок кода
-            #pragma omp parallel firstprivate(volume_size) shared(volume, str_function)
-            {
-                int i = omp_get_thread_num();
+			// запускаем паралельно данный участок кода
+			#pragma omp parallel firstprivate(volume_size) shared(volume, str_function)
+			{
+				int i = omp_get_thread_num();
 
-                parser_t tparser;
-                parser_create(&tparser);
-                parser_clean(&tparser);
+				parser_t tparser;
+				parser_create(&tparser);
+				parser_clean(&tparser);
 
-                // вычисляем интервал вычислений для данного потока
-                vector3ui begin = vec3ui(0, 0, volume_size.z * ((float) (i) / (float) omp_get_num_threads()));
-                vector3ui end = vec3ui(volume_size.x, volume_size.y, volume_size.z * ((float) (i+1) / (float) omp_get_num_threads()));
+				// вычисляем интервал вычислений для данного потока
+				vector3ui begin = vec3ui(0, 0, volume_size.z * ((float) (i) / (float) omp_get_num_threads()));
+				vector3ui end = vec3ui(volume_size.x, volume_size.y, volume_size.z * ((float) (i+1) / (float) omp_get_num_threads()));
 
-                float_var_value_t float_vars[] =
-                    {
-                        {1, 0.0f}, // d
-                        {2, 0.0f}, // x
-                        {3, 0.0f}, // y
-                        {4, 0.0f}, // z
-                        {0, 0.0f}
-                    };
+				float_var_value_t float_vars[] =
+				{
+					{1, 0.0f}, // d
+					{2, 0.0f}, // x
+					{3, 0.0f}, // y
+					{4, 0.0f}, // z
+					{0, 0.0f}
+				};
 
-                // проходимся по соотвествующему участку массива
-                for(unsigned k = begin.z; k < end.z; k++) {
-                    for(unsigned j = begin.y; j < end.y; j++) {
-                        for(unsigned i = begin.x; i < end.x; i++) {
+				// проходимся по соотвествующему участку массива
+				for(unsigned k = begin.z; k < end.z; k++) {
+					for(unsigned j = begin.y; j < end.y; j++) {
+						for(unsigned i = begin.x; i < end.x; i++) {
 
-                            float_vars[0].value = 0.0f; float_vars[1].value = i;
-                            float_vars[2].value = j; float_vars[3].value = k;
+							float_vars[0].value = 0.0f; float_vars[1].value = i;
+							float_vars[2].value = j; float_vars[3].value = k;
 
-                            if(parser_parse_text(&tparser, str_function, float_vars) == 0) {
-                                volume[i + j*volume_size.x + k*volume_size.x*volume_size.y] = float_vars[0].value;
-                            }
-                        }
-                    }
-                }
+							if(parser_parse_text(&tparser, str_function, float_vars) == 0) {
+								volume[i + j*volume_size.x + k*volume_size.x*volume_size.y] = float_vars[0].value;
+							}
+						}
+					}
+				}
 
-                parser_clean(&tparser);
+				parser_clean(&tparser);
 
-            }
+			}
 
-        } else {
-            // проходимся по всему массиву и устанавливаем соотвествующее функции значение
-            for(unsigned k = 0; k < volume_size.z; k++) {
-                for(unsigned j = 0; j < volume_size.y; j++) {
-                    for(unsigned i = 0; i < volume_size.x; i++) {
-                        volume[i + j*volume_size.x + k*volume_size.x*volume_size.y] = volume_func(vec3f(i, j, k));
-                    }
-                }
-            }
-        }
+		} else {
+			// проходимся по всему массиву и устанавливаем соотвествующее функции значение
+			for(unsigned k = 0; k < volume_size.z; k++) {
+				for(unsigned j = 0; j < volume_size.y; j++) {
+					for(unsigned i = 0; i < volume_size.x; i++) {
+						volume[i + j*volume_size.x + k*volume_size.x*volume_size.y] = volume_func(vec3f(i, j, k));
+					}
+				}
+			}
+		}
 
-        update_volume_vbos();
-    }
+		update_volume_vbos();
+	}
 }
 
 void render_update(double last_frame_time)
@@ -719,8 +719,8 @@ int render_export_obj(char **buffer)
 	if(!marching_cubes_create_vbos(volume, 
 								   volume_size, 
 								   grid_size, 
-                                   isolevel, vertex_vbo, index_vbo, normal_vbo,
-                                   volume_func, NULL)) {
+								   isolevel, vertex_vbo, index_vbo, normal_vbo,
+								   volume_func, NULL)) {
 		
 		ERROR_MSG("Marching Cubes: nothing to generate");
 		
@@ -820,8 +820,8 @@ int render_export_obj(char **buffer)
 	free(normal_data);
 	free(temp);
 	
-    glDeleteBuffers(1, &vertex_vbo);
-    glDeleteBuffers(1, &index_vbo);
+	glDeleteBuffers(1, &vertex_vbo);
+	glDeleteBuffers(1, &index_vbo);
 	glDeleteBuffers(1, &normal_vbo);
 	
 	glBindBuffer(GL_ARRAY_BUFFER, last_array_buffer);
@@ -949,20 +949,20 @@ void render_get_opengl_version(int *major, int *minor)
 	while(*ptr != '\0') {
 
 		if(isalnum(*ptr)) {
-            if(*(ptr+1) == '.') {
-                if(!flag_major) {
-                   gl_major = atoi(&(*ptr));
-                   flag_major = 1;
-                } else if(!flag_minor) {
-                   gl_minor = atoi(&(*ptr));
-                   flag_minor = 1;
-                }
-            } else {
-                if(!flag_minor) {
-                   gl_minor = atoi(&(*ptr));
-                   flag_minor = 1;
-                }
-            }
+			if(*(ptr+1) == '.') {
+				if(!flag_major) {
+					gl_major = atoi(&(*ptr));
+					flag_major = 1;
+				} else if(!flag_minor) {
+					gl_minor = atoi(&(*ptr));
+					flag_minor = 1;
+				}
+			} else {
+				if(!flag_minor) {
+					gl_minor = atoi(&(*ptr));
+					flag_minor = 1;
+				}
+			}
 		}
 
 		if(flag_major && flag_minor)

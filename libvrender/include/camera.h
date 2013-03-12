@@ -95,7 +95,7 @@ void camera_update(camera_t *cam, double dt);
 /* 
  * Установить ограничения обзора
  * Стандартный обзор от -360 до +360 (т.е. без ограничения) 
- *    по вертикали и горизонтали
+ *	по вертикали и горизонтали
  */
 void camera_set_limit(camera_t *cam, float vert_from, float vert_to,
 					  float horiz_from, float horiz_to);

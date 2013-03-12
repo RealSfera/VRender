@@ -31,7 +31,7 @@
 #ifdef __WIN32
 	#include <GL/gl.h>
 	#include "GL/glext.h"
-    #include "gl_funcs.h"
+	#include "gl_funcs.h"
 #endif
 
 #define _DEBUG_
@@ -41,9 +41,9 @@
 
 	#ifdef _TRACE_
 
-        #define TRACE_MSG(msg, ...) log_printf("[TRACE] %s() " msg, __FUNCTION__, ##__VA_ARGS__)
+		#define TRACE_MSG(msg, ...) log_printf("[TRACE] %s() " msg, __FUNCTION__, ##__VA_ARGS__)
 		#define TRACE_CODE(code) code
-        #define TRACE_FUNC() log_printf("[FUNC] %s\n", __FUNCTION__)
+		#define TRACE_FUNC() log_printf("[FUNC] %s\n", __FUNCTION__)
 		//#define TRACE_FUNC()
 
 	#else /* _TRACE_ */
@@ -56,40 +56,40 @@
 
 	#define DEBUG_CODE(code) code
 
-    #define ERROR_MSG(msg, ...) log_printf("[ERROR] %s() " msg, __FUNCTION__, ##__VA_ARGS__)
-    #define DEBUG_MSG(msg, ...) log_printf("[DEBUG] " msg, ##__VA_ARGS__)
+	#define ERROR_MSG(msg, ...) log_printf("[ERROR] %s() " msg, __FUNCTION__, ##__VA_ARGS__)
+	#define DEBUG_MSG(msg, ...) log_printf("[DEBUG] " msg, ##__VA_ARGS__)
 
-    #define ASSERT_MSG(msg, ...) log_printf("[ASSERT] " msg, ##__VA_ARGS__)
-    #define ASSERT(expr) if( !(expr) ) { log_printf("[ASSERT] " #expr " == %i\n", ( !(expr):0:1 )); }
+	#define ASSERT_MSG(msg, ...) log_printf("[ASSERT] " msg, ##__VA_ARGS__)
+	#define ASSERT(expr) if( !(expr) ) { log_printf("[ASSERT] " #expr " == %i\n", ( !(expr):0:1 )); }
 
 	// Бывает удобно...
 	#define IF_FAILED_RET(expr, ret) if( !(expr) ) { \
-                                        log_printf( "file: %s line: %i function: %s \n" #expr " == %i\n", \
+										log_printf( "file: %s line: %i function: %s \n" #expr " == %i\n", \
 												__FILE__, __LINE__, __FUNCTION__, ( !(expr)?0:1 ) ); \
 										return ret; \
 									  }
 									  
 	#define IF_FAILED(expr) if( !(expr) ) { \
-                                log_printf( "file: %s line: %i function: %s \n" #expr " == %i\n", \
+								log_printf( "file: %s line: %i function: %s \n" #expr " == %i\n", \
 												__FILE__, __LINE__, __FUNCTION__, ( !(expr)?0:1 ) ); \
 								return; \
 							}
 						
 	#define IF_FAILED0(expr) if( !(expr) ) { \
-                                log_printf( "file: %s line: %i function: %s \n" #expr " == %i\n", \
+								log_printf( "file: %s line: %i function: %s \n" #expr " == %i\n", \
 												__FILE__, __LINE__, __FUNCTION__, ( !(expr)?0:1 ) ); \
 								return 0; \
 							  }
 							  
 	#define IF_FAILED1(expr) if( !(expr) ) { \
-                                log_printf( "file: %s line: %i function: %s \n" #expr " == %i\n", \
+								log_printf( "file: %s line: %i function: %s \n" #expr " == %i\n", \
 												__FILE__, __LINE__, __FUNCTION__, ( !(expr)?0:1 ) ); \
 								return 1; \
 							 }
 
 #else /* _DEBUG_ */
 
-    #define ERROR_MSG(msg, ...) log_printf(stderr, "[ERROR] " msg, ##__VA_ARGS__)
+	#define ERROR_MSG(msg, ...) log_printf(stderr, "[ERROR] " msg, ##__VA_ARGS__)
 	
 	#define DEBUG_MSG(msg, ...)
 	#define ASSERT_MSG(msg, ...)

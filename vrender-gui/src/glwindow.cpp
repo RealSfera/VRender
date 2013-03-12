@@ -34,7 +34,7 @@ GLWindow::GLWindow(QWidget *parent) :
 	//gl_format.setSwapInterval(0);
 	
 	// ...и устанавливаем
-    setFormat(gl_format);
+	setFormat(gl_format);
 
 	// устанавливаем параметры по-умолчанию
 	is_multithreading = false;

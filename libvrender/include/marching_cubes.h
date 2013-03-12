@@ -61,8 +61,8 @@ int marching_cubes_create(const float *volume, vector3ui volume_size, vector3ui 
  */
 int marching_cubes_create_vbos(const float *volume, vector3ui volume_size, 
 							  vector3ui grid_size, float isolevel,
-                              GLuint vertex_vbo, GLuint index_vbo, GLuint normal_vbo,
-                              float (*function)(vector3f pos), unsigned *num_elements);
+							   GLuint vertex_vbo, GLuint index_vbo, GLuint normal_vbo,
+							   float (*function)(vector3f pos), unsigned *num_elements);
 
 #ifdef __cplusplus
 }

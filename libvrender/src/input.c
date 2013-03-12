@@ -109,7 +109,7 @@ void input_event_on_keyreleased(unsigned key)
 		input_kb_keys_state[key] = 0;
 		
 		// если мы отпустили букву в верхнем регистре (или нижнем), 
-		//    то мы также отпустили и в нижнем (верхнем) регистре
+		//	то мы также отпустили и в нижнем (верхнем) регистре
 		if(key >= KB_A && key <= KB_Z)
 			input_kb_keys_state[(key - KB_A)+KB_a] = 0;
 		else if(key >= KB_a && key <= KB_z)

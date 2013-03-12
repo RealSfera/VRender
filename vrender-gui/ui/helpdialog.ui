@@ -13,6 +13,9 @@
   <property name="windowTitle">
    <string>Справка</string>
   </property>
+  <property name="sizeGripEnabled">
+   <bool>false</bool>
+  </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="1" column="0">
     <spacer name="horizontalSpacer">

@@ -452,8 +452,8 @@ int marching_cubes_create(const float *volume, vector3ui volume_size, vector3ui 
 	
 	
 	cell_t cell;
-    vector3f vertices[15];
-    triangle_t triangles[5];
+	vector3f vertices[15];
+	triangle_t triangles[5];
 	unsigned short nv = 0, nt = 0;
 	
 	// проходим по всему массиву volume
@@ -469,29 +469,29 @@ int marching_cubes_create(const float *volume, vector3ui volume_size, vector3ui 
 				
 				// создаем ячейку с соотвествующими вершинами и изо-значениями
 				cell.vertices_positions[0] = pos_offset;
-				cell.vertices_values[0]    = VOLUME(value_offset);
+				cell.vertices_values[0]	= VOLUME(value_offset);
 				
 				cell.vertices_positions[1] = vec3f_add(pos_offset, vec3f(pos_step.x, 0.0f, 0.0f));
-				cell.vertices_values[1]    = VOLUME(vec3ui_add(value_offset, vec3ui(value_step.x, 0, 0)));
+				cell.vertices_values[1]	= VOLUME(vec3ui_add(value_offset, vec3ui(value_step.x, 0, 0)));
 				
 				cell.vertices_positions[2] = vec3f_add(pos_offset, vec3f(pos_step.x, pos_step.y, 0.0f));
-				cell.vertices_values[2]    = VOLUME(vec3ui_add(value_offset, vec3ui(value_step.x, value_step.y, 0)));
+				cell.vertices_values[2]	= VOLUME(vec3ui_add(value_offset, vec3ui(value_step.x, value_step.y, 0)));
 				
 				cell.vertices_positions[3] = vec3f_add(pos_offset, vec3f(0.0f, pos_step.y, 0.0f));
-				cell.vertices_values[3]    = VOLUME(vec3ui_add(value_offset, vec3ui(0, value_step.y, 0)));
+				cell.vertices_values[3]	= VOLUME(vec3ui_add(value_offset, vec3ui(0, value_step.y, 0)));
 				
 				
 				cell.vertices_positions[4] = vec3f_add(pos_offset, vec3f(0.0f, 0.0f, pos_step.z));;
-				cell.vertices_values[4]    = VOLUME(vec3ui_add(value_offset, vec3ui(0, 0, value_step.z)));
+				cell.vertices_values[4]	= VOLUME(vec3ui_add(value_offset, vec3ui(0, 0, value_step.z)));
 				
 				cell.vertices_positions[5] = vec3f_add(pos_offset, vec3f(pos_step.x, 0.0f, pos_step.z));
-				cell.vertices_values[5]    = VOLUME(vec3ui_add(value_offset, vec3ui(value_step.x, 0, value_step.z)));
+				cell.vertices_values[5]	= VOLUME(vec3ui_add(value_offset, vec3ui(value_step.x, 0, value_step.z)));
 				
 				cell.vertices_positions[6] = vec3f_add(pos_offset, vec3f(pos_step.x, pos_step.y, pos_step.z));
-				cell.vertices_values[6]    = VOLUME(vec3ui_add(value_offset, vec3ui(value_step.x, value_step.y, value_step.z)));
+				cell.vertices_values[6]	= VOLUME(vec3ui_add(value_offset, vec3ui(value_step.x, value_step.y, value_step.z)));
 				
 				cell.vertices_positions[7] = vec3f_add(pos_offset, vec3f(0.0f, pos_step.y, pos_step.z));
-				cell.vertices_values[7]    = VOLUME(vec3ui_add(value_offset, vec3ui(0, value_step.y, value_step.z)));
+				cell.vertices_values[7]	= VOLUME(vec3ui_add(value_offset, vec3ui(0, value_step.y, value_step.z)));
 				
 				#undef VOLUME
 				
@@ -547,8 +547,8 @@ int marching_cubes_create(const float *volume, vector3ui volume_size, vector3ui 
 
 int marching_cubes_create_vbos(const float *volume, vector3ui volume_size, 
 							  vector3ui grid_size, float isolevel,
-                              GLuint vertex_vbo, GLuint index_vbo, GLuint normal_vbo,
-                              float (*function)(vector3f pos), unsigned *num_elements)
+							   GLuint vertex_vbo, GLuint index_vbo, GLuint normal_vbo,
+							   float (*function)(vector3f pos), unsigned *num_elements)
 {
 	int result = 0;
 	unsigned n_vertices = 0, n_triangles = 0;

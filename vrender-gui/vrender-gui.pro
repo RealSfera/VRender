@@ -3,7 +3,7 @@
 # This file is part of vrender-gui.
 #
 
-QT       += core gui opengl
+QT += core gui opengl
 
 TARGET = vrender-gui
 TEMPLATE = app
@@ -17,16 +17,16 @@ unix:  LIBS += -lGL -lgomp -Bstatic
 PRE_TARGETDEPS += ../libvrender-build/libvrender.a
 
 SOURCES += src/main.cpp \
-           src/mainwindow.cpp \
-           src/glwindow.cpp \
-           src/helpdialog.cpp
+		src/mainwindow.cpp \
+		src/glwindow.cpp \
+		src/helpdialog.cpp
 
-HEADERS  += include/mainwindow.h \
-            include/glwindow.h \
-            include/helpdialog.h
+HEADERS += include/mainwindow.h \
+		include/glwindow.h \
+		include/helpdialog.h
 
-FORMS    += ui/mainwindow.ui \
-            ui/helpdialog.ui
+FORMS += ui/mainwindow.ui \
+		ui/helpdialog.ui
 
 RESOURCES += res/app.qrc
 

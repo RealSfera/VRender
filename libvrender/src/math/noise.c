@@ -71,8 +71,8 @@ static float smooth_noise2d(float x, float y)
 					  int_noise2d((int)(x + 1), (int)(y + 1)) ) / 16.0f;
 	float sides = ( int_noise2d((int)(x - 1), (int) y) +
 					int_noise2d((int)(x + 1), (int) y) +
-				    int_noise2d((int) x, (int)(y - 1)) +
-				    int_noise2d((int) x, (int)(y + 1)) ) / 8.0f;
+					int_noise2d((int) x, (int)(y - 1)) +
+					int_noise2d((int) x, (int)(y + 1)) ) / 8.0f;
 	float center = int_noise2d((int) x, (int) y) / 4.0f;
 	
 	return corners + sides + center;
@@ -86,8 +86,8 @@ static float smooth_noise3d(float x, float y, float z)
 					  int_noise3d((int)(x + 1), (int)(y + 1), (int) (z - 1)) ) / 1024.0f;
 	float sides0 = ( int_noise3d((int)(x - 1), (int) y, (int) (z - 1)) +
 					int_noise3d((int)(x + 1), (int) y, (int) (z - 1)) +
-				    int_noise3d((int) x, (int)(y - 1), (int) (z - 1)) +
-				    int_noise3d((int) x, (int)(y + 1), (int) (z - 1)) ) / 512.0f;
+					int_noise3d((int) x, (int)(y - 1), (int) (z - 1)) +
+					int_noise3d((int) x, (int)(y + 1), (int) (z - 1)) ) / 512.0f;
 	
 	float center0 = int_noise3d((int) x, (int) y, (int) (z - 1)) / 256.0f;
 	
@@ -98,20 +98,20 @@ static float smooth_noise3d(float x, float y, float z)
 					  int_noise3d((int)(x + 1), (int)(y + 1), (int) z) ) / 128.0f;
 	float sides1 = ( int_noise3d((int)(x - 1), (int) y, (int) z) +
 					int_noise3d((int)(x + 1), (int) y, (int) z) +
-				    int_noise3d((int) x, (int)(y - 1), (int) z) +
-				    int_noise3d((int) x, (int)(y + 1), (int) z) ) / 64.0f;
+					int_noise3d((int) x, (int)(y - 1), (int) z) +
+					int_noise3d((int) x, (int)(y + 1), (int) z) ) / 64.0f;
 	
 	float center1 = int_noise3d((int) x, (int) y, (int) z) / 32.0f;
 	
 	
 	float corners2 = ( int_noise3d((int)(x - 1), (int)(y - 1), (int) (z + 1)) +
-					  int_noise3d((int)(x + 1), (int)(y - 1), (int) (z + 1)) +
-					  int_noise3d((int)(x - 1), (int)(y + 1), (int) (z + 1)) +
-					  int_noise3d((int)(x + 1), (int)(y + 1), (int) (z + 1)) ) / 16.0f;
+					int_noise3d((int)(x + 1), (int)(y - 1), (int) (z + 1)) +
+					int_noise3d((int)(x - 1), (int)(y + 1), (int) (z + 1)) +
+					int_noise3d((int)(x + 1), (int)(y + 1), (int) (z + 1)) ) / 16.0f;
 	float sides2 = ( int_noise3d((int)(x - 1), (int) y, (int) (z + 1)) +
 					int_noise3d((int)(x + 1), (int) y, (int) (z + 1)) +
-				    int_noise3d((int) x, (int)(y - 1), (int) (z + 1)) +
-				    int_noise3d((int) x, (int)(y + 1), (int) (z + 1)) ) / 8.0f;
+					int_noise3d((int) x, (int)(y - 1), (int) (z + 1)) +
+					int_noise3d((int) x, (int)(y + 1), (int) (z + 1)) ) / 8.0f;
 	
 	float center2 = int_noise3d((int) x, (int) y, (int) (z + 1)) / 4.0f;
 	
@@ -318,7 +318,7 @@ static vector3f grad3[] =
 
 static int perm[512];
 static int p[] = 
-	{
+{
 		151, 160, 137, 91, 90, 15, 131, 13, 201, 95, 96, 53, 194, 233, 7, 225, 140, 36, 103, 30, 69, 
 		142, 8, 99, 37, 240, 21, 10, 23, 190,  6, 148, 247, 120, 234, 75, 0, 26, 197, 62, 94, 252, 219, 
 		203, 117, 35, 11, 32, 57, 177, 33, 88, 237, 149, 56, 87, 174, 20, 125, 136, 171, 168, 68, 175, 
@@ -331,7 +331,7 @@ static int p[] =
 		112, 104, 218, 246, 97, 228, 251, 34, 242, 193, 238, 210, 144, 12, 191, 179, 162, 241,  81, 51, 145, 
 		235, 249, 14, 239, 107, 49, 192, 214,  31, 181, 199, 106, 157, 184,  84, 204, 176, 115, 121, 50, 45, 
 		127,  4, 150, 254, 138, 236, 205, 93, 222, 114, 67, 29, 24, 72, 243, 141, 128, 195, 78, 66, 215, 61, 156, 180
-   };
+};
 
 INLINE static float fade(float t)
 {

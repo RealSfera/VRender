@@ -338,7 +338,7 @@ static float_function3_t builtin_functions3[] =
 		{ 129, (func3_t) &call_length3 },
 
 		{ 134, (func3_t) &call_vnoise3 },
-	    { 135, (func3_t) &call_pnoise3 },
+		{ 135, (func3_t) &call_pnoise3 },
 		{ 136, (func3_t) &call_snoise3 },
 		{0, 0}
 	};
@@ -1528,6 +1528,18 @@ int lexer_parser(parser_t *p, const char *text)
 			continue;
 		} else if(*ptr == '\0') { // если нулевой-символ, ты выходим
 			break;
+		} else if(*ptr == '#') { // если символ комментария
+			while(*ptr != '\n') {
+				if(*ptr == '\0')
+					break;
+				ptr++; // пропускаем все символы до конца строки
+			}
+
+			if(*ptr == '\0')
+				break;
+
+			ptr++; // пропускаем переход на след. строку
+			continue;
 		}
 		
 		if( isalpha(*ptr) ) {
@@ -1552,7 +1564,7 @@ int lexer_parser(parser_t *p, const char *text)
 			
 			while(isdigit(*ptr)) ptr++;
 			
-			// если есть точка, значит это вещественое число
+			// если есть точка, значит это вещественное число
 			if( *(ptr) == '.' && isdigit(*(ptr+1)) ) {
 				ptr++;
 				while(isdigit( *ptr )) ptr++;
