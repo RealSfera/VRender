@@ -1353,6 +1353,13 @@ void syntax_parser(parser_t *p)
 				break;
 			}
 		} else {
+
+			if(p->tokens[p->index].type != UNKNOWN) {
+				if(!p->error)
+					set_error(p, "encounter unknown token", 16);
+				break;
+			}
+
 			// если первый токен неидентификатор, то парсим исключая присваивание
 			eval_expr2(p, &value);
 			if(p->tokens[p->index].type != SEMICOLON) {

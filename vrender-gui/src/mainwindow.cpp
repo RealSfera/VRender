@@ -20,7 +20,7 @@
 #include "ui_mainwindow.h"
 #include "glwindow.h"
 
-#define VERSION STRINGIFY(1.0.0)
+#define VERSION STRINGIFY(1.0.1)
 #define MAGIC_NUMBER 0xE0E0A1B9
 
 MainWindow::MainWindow(QWidget *parent) :

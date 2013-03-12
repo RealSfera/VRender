@@ -269,7 +269,12 @@ static QString get_error_string(int error)
 		case 15:
 			result = QString::fromUtf8("Деление на ноль");
 			break;
-		
+		case 16:
+			result = QString::fromUtf8("Встречен неизвестный токен");
+			break;
+		default:
+			result = QString::fromUtf8("Неизвестная ошибка");
+			break;
 	};
 	
 	return result;
@@ -312,16 +317,14 @@ bool GLWindow::set_function_text(const char* text)
 	int error = 0;
 	if((error = render_set_function_text(text)) != 0) {
 		QString error_str = get_error_string(error);
-		QMessageBox::critical(this, QString::fromUtf8("Ошибка в выражении"), 
-							  QString::fromUtf8("При вычислении выражения произошла ошибка: "+error_str.toUtf8()));
+		QMessageBox::critical(this, QString::fromUtf8("Ошибка"),
+							  QString::fromUtf8("Ошибка в выражении: "+error_str.toUtf8()));
 		
 		return false;
 	}
 	
 	return true;
 }
-
-////
 
 void GLWindow::set_light_rot_step(float step)
 {
@@ -433,8 +436,6 @@ void GLWindow::set_camera_fov(float fov)
 {
 	camera_fov = fov;
 }
-
-////
 
 void GLWindow::set_number_of_threads(unsigned num)
 {
