@@ -25,35 +25,35 @@ GLWindow::GLWindow(QWidget *parent) :
 {
 	
 	// настраиваем формат Qt OpenGL
-    gl_format.setDirectRendering(true);
+	gl_format.setDirectRendering(true);
 	gl_format.setDoubleBuffer(true);
-    gl_format.setSampleBuffers(true);
+	gl_format.setSampleBuffers(true);
 
-    // форсировано включаем вертикальную синхронизацию
-    // это снижает нагрузку на CPU
-    gl_format.setSwapInterval(1);
+	// форсировано включаем вертикальную синхронизацию
+	// это снижает нагрузку на CPU
+	//gl_format.setSwapInterval(0);
 	
 	// ...и устанавливаем
     setFormat(gl_format);
 
 	// устанавливаем параметры по-умолчанию
-    is_multithreading = false;
+	is_multithreading = false;
 	threads_num = 1;
-    isolevel = 30.0f; isolevel_begin = 0.0f; isolevel_end = 30.0f;
-    isolevel_step = 0.01f; isolevel_is_animate = 0;
-    camera_step = 0.2f; camera_move_speed = 15.0f; camera_fov = 16.0f;
+	isolevel = 30.0f; isolevel_begin = 0.0f; isolevel_end = 30.0f;
+	isolevel_step = 0.01f; isolevel_is_animate = 0;
+	camera_step = 0.2f; camera_move_speed = 15.0f; camera_fov = 16.0f;
 
-    material_front_color = vec3f(0.5f, 0.5f, 0.5f);
+	material_front_color = vec3f(0.5f, 0.5f, 0.5f);
 	material_back_color = vec3f(0.5f, 0.0f, 0.0f);
-    light_color = vec3f(1.0f, 1.0f, 1.0f);
-    light_spec_color = vec3f(1.0f, 1.0f, 1.0f);
-    material_shininess = 30.0f; coef_gamma = 2.2f; coef_ambient = 0.5f;
-    coef_diffuse = 1.0f; coef_specular = 1.0f;
+	light_color = vec3f(1.0f, 1.0f, 1.0f);
+	light_spec_color = vec3f(1.0f, 1.0f, 1.0f);
+	material_shininess = 30.0f; coef_gamma = 2.2f; coef_ambient = 0.5f;
+	coef_diffuse = 1.0f; coef_specular = 1.0f;
 
-    volume_size = vec3ui(128, 128, 128); grid_size = vec3ui(64, 64, 64);
+	volume_size = vec3ui(128, 128, 128); grid_size = vec3ui(64, 64, 64);
 
-    light_angle = 0.0f; light_rot_step = 0.01f;
-    light_is_animate = 0;
+	light_angle = 0.0f; light_rot_step = 0.01f;
+	light_is_animate = 0;
 	
 	// устанавливаем фокус для окна OpenGL
 	setFocusPolicy(Qt::StrongFocus);
@@ -70,26 +70,26 @@ GLWindow::~GLWindow()
 
 void GLWindow::initializeGL()
 {
-    // инициализуруем OpenGL, чтобы затем получить его версию
-    render_init_opengl();
+	// инициализуруем OpenGL, чтобы затем получить его версию
+	render_init_opengl();
 
-    int major = 0, minor = 0;
-    render_get_opengl_version(&major, &minor);
+	int major = 0, minor = 0;
+	render_get_opengl_version(&major, &minor);
 
-    QString version("");
-    version.sprintf("%i.%i", major, minor);
+	QString version("");
+	version.sprintf("%i.%i", major, minor);
 
-    if(major < 2 || (major == 2 && minor < 1)) {
-        QMessageBox::critical(this, QString::fromUtf8("Ошибка"),
-                              QString::fromUtf8("Требуется поддержка OpenGL 2.1+. Ваша версия: ") + version);
-        exit(-1);
-    }
+	if(major < 2 || (major == 2 && minor < 1)) {
+		QMessageBox::critical(this, QString::fromUtf8("Ошибка"),
+							   QString::fromUtf8("Требуется поддержка OpenGL 2.1+. Ваша версия: ") + version);
+		exit(-1);
+	}
 
 	// инициализируем рендер из libvrender
 	if(!render_init()) {
 		qDebug() << "ERROR: failed to init render";
-        QMessageBox::critical(this, QString::fromUtf8("Ошибка"),
-                              QString::fromUtf8("Ошибка инициализации рендера!"));
+		QMessageBox::critical(this, QString::fromUtf8("Ошибка"),
+							   QString::fromUtf8("Ошибка инициализации рендера!"));
 		exit(-1);
 	}
 	
@@ -156,7 +156,7 @@ unsigned int GLWindow::get_fps()
 }
 
 void GLWindow::resizeGL(int w, int h)
-{	
+{
 	render_change_window(w, h);
 	render_update(frame_time_ms / 1000.0);
 }
@@ -449,6 +449,6 @@ void GLWindow::set_number_of_threads(unsigned num)
 void GLWindow::begin_generation()
 {
 	render_set_grid_size(grid_size);
-    render_set_volume_size(volume_size, 1);
+	render_set_volume_size(volume_size, 1);
 	render_update_volume_tex();
 }

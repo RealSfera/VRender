@@ -7,29 +7,29 @@ static FILE *log_file = NULL;
 
 int log_init()
 {
-    log_file = fopen("vrender.log", "w");
+	log_file = fopen("vrender.log", "w");
 
-    if(!log_file) {
-        return 0;
-    }
+	if(!log_file) {
+		return 0;
+	}
 
-    return 1;
+	return 1;
 }
 
 void log_printf(const char *format, ...)
 {
-    va_list ap;
-    va_start(ap, format);
+	va_list ap;
+	va_start(ap, format);
 
-    vfprintf(log_file, format, ap);
-    fflush(log_file);
+	vfprintf(log_file, format, ap);
+	fflush(log_file);
 
-    vprintf(format, ap);
+	vprintf(format, ap);
 
-    va_end(ap);
+	va_end(ap);
 }
 
 void log_close()
 {
-    fclose(log_file);
+	fclose(log_file);
 }

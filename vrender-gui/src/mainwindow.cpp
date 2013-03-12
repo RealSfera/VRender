@@ -390,14 +390,14 @@ void MainWindow::on_volume_export_action_triggered()
         // MAGIC_NUMBER
         // VRender
         // Версия текстом
-        // Размер: size.x size.y size.z
+		// Размер (будет на единицу больше): size.x size.y size.z
         // Данные
 
         QDataStream data_stream(&file);
         data_stream << (quint32) MAGIC_NUMBER;
         data_stream << QString("VRender");
-        data_stream << QString(VERSION);
-        data_stream << size.x; data_stream << size.y; data_stream << size.z;
+		data_stream << QString(VERSION);
+		data_stream << size.x; data_stream << size.y; data_stream << size.z;
         data_stream.writeRawData((const char*) volume, sizeof(float) * size.x*size.y*size.z);
         file.close();
 
@@ -480,13 +480,14 @@ void MainWindow::on_volume_import_action_triggered()
         data_stream.readRawData((char*) volume, sizeof(float) * size.x*size.y*size.z);
         file.close();
 
-        render_set_external_volume(volume, size);
+		size = vec3ui_sub_c(size, 1); // т.к. размер на единицу больше
+		render_set_external_volume(volume, size);
         delete [] volume;
 
-        ui->volume_size_value_x->setValue(size.x);
-        ui->volume_size_value_y->setValue(size.y);
-        ui->volume_size_value_z->setValue(size.z);
-        main_gl_window->set_volume_size(size);
+		ui->volume_size_value_x->setValue(size.x);
+		ui->volume_size_value_y->setValue(size.y);
+		ui->volume_size_value_z->setValue(size.z);
+		main_gl_window->set_volume_size(size);
 
         ui->build_function_text->setPlainText("");
 

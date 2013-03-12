@@ -194,43 +194,43 @@ void render_update_volume_tex(void)
 
 static void update_volume_vbos(void)
 {
-    glBindVertexArray(0);
+	glBindVertexArray(0);
 
 	// полигонизируем скалярное поле
-    if(!marching_cubes_create_vbos(volume,
+	if(!marching_cubes_create_vbos(volume,
 								   volume_size, 
 								   grid_size, 
                                    isolevel, vbo[0], vbo[1], 0, NULL, &num_elements)) {
 		
 		ERROR_MSG("Marching Cubes: nothing to generate");
-    }
+	}
 }
 
 void render_init_opengl()
 {
-    IF_FAILED(!init_opengl);
+	IF_FAILED(!init_opengl);
 
 #ifdef __WIN32
-    gl_funcs_init();
+	gl_funcs_init();
 #endif
 
-    init_opengl = 1;
+	init_opengl = 1;
 }
 
 int render_init(void)
 {
 	IF_FAILED0(!init);
 
-    if(!init_opengl) {
-        ERROR_MSG("OpenGL not initialised\n");
-        return 0;
-    }
+	if(!init_opengl) {
+		ERROR_MSG("OpenGL not initialised\n");
+		return 0;
+	}
 
-    log_init();
+	log_init();
 	
 	TRACE_MSG("init base render system\n");
 	
-    TRACE_MSG("init noise\n");
+	TRACE_MSG("init noise\n");
 	noise_init();
 	
 	glViewport(0, 0, window_width, window_height);
@@ -241,7 +241,7 @@ int render_init(void)
 	glDepthFunc(GL_LESS);
 	glEnable(GL_DEPTH_CLAMP);
 	
-    DEBUG_MSG("OpenGL version: %s\n", glGetString(GL_VERSION));
+	DEBUG_MSG("OpenGL version: %s\n", glGetString(GL_VERSION));
 	DEBUG_MSG("GLSL version: %s\n", (char*) glGetString(GL_SHADING_LANGUAGE_VERSION));
 	
 	// настраиваем основную камеру
@@ -265,8 +265,8 @@ int render_init(void)
 	strcpy(str_function, default_func);
 	
 	// настраиваем и создаем скалярное поле
-    render_set_volume_size(vec3ui(128, 128, 128), 1);
-    render_set_grid_size(vec3ui(64, 64, 64));
+	render_set_volume_size(vec3ui(128, 128, 128), 1);
+	render_set_grid_size(vec3ui(64, 64, 64));
 	render_update_volume_tex();
 	
 	CHECK_GL_ERRORS();
@@ -328,7 +328,7 @@ static float volume_func(vector3f pos)
 	}
 	
 	// получаем вычисленное значение d
-    return float_vars[0].value;
+	return float_vars[0].value;
 }
 
 void render_set_grid_size(vector3ui grid_size_v)
@@ -341,7 +341,7 @@ void render_set_grid_size(vector3ui grid_size_v)
 
 void render_set_volume_size(vector3ui volume_size_v, int rebuild)
 {
-    volume_size = vec3ui_add_c(volume_size_v, 1);
+	volume_size = vec3ui_add_c(volume_size_v, 1);
 	volume_step = vec3f_div(vec3f(1.0f, 1.0f, 1.0f), vec3ui_to_vec3f(volume_size));
 	
 	if(volume) {
@@ -351,7 +351,7 @@ void render_set_volume_size(vector3ui volume_size_v, int rebuild)
 	
 	volume = (float*) malloc(sizeof(float) * volume_size.x*volume_size.y*volume_size.z);
 	
-    if(rebuild) {
+	if(rebuild) {
         // проверяем количество потоков и решаем использовать ли многопоточность
         if(num_threads >= 2) {
 
@@ -607,18 +607,18 @@ void render_draw(void)
 	
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
-    glActiveTexture(GL_TEXTURE0);
-    texture_bind(&volume_texture);
+	glActiveTexture(GL_TEXTURE0);
+	texture_bind(&volume_texture);
 
 	shader_program_bind(&program);
 	
-    glBindVertexArray(vao);
-    glEnableVertexAttribArray(attr_position);
+	glBindVertexArray(vao);
+	glEnableVertexAttribArray(attr_position);
 	
-    glDrawElements(GL_TRIANGLES, num_elements, GL_UNSIGNED_INT, NULL);
+	glDrawElements(GL_TRIANGLES, num_elements, GL_UNSIGNED_INT, NULL);
 
-    glDisableVertexAttribArray(attr_position);
-    glBindVertexArray(0);
+	glDisableVertexAttribArray(attr_position);
+	glBindVertexArray(0);
 
 	shader_program_unbind(&program);
 }
@@ -661,12 +661,12 @@ void render_destroy(void)
 	
 	init = 0;
 
-    log_close();
+	log_close();
 }
 
 int render_set_function_text(const char *function_text)
-{	
-    IF_FAILED_RET(init && function_text, -100);
+{
+	IF_FAILED_RET(init && function_text, -100);
 	
 	float_var_value_t float_vars[] = 
 		{
@@ -701,7 +701,7 @@ int render_set_function_text(const char *function_text)
 
 int render_export_obj(char **buffer)
 {
-    IF_FAILED0(init && buffer);
+	IF_FAILED0(init && buffer);
 	
 	int element_buffer_size = 0, vertex_buffer_size = 0, normal_buffer_size = 0;
 	GLuint vertex_vbo, index_vbo, normal_vbo;
@@ -712,9 +712,9 @@ int render_export_obj(char **buffer)
 	glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &last_array_buffer);	
 	glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &last_element_array_buffer);
 	
-    glGenBuffers(1, &vertex_vbo);
-    glGenBuffers(1, &index_vbo);
-    glGenBuffers(1, &normal_vbo);
+	glGenBuffers(1, &vertex_vbo);
+	glGenBuffers(1, &index_vbo);
+	glGenBuffers(1, &normal_vbo);
 	
 	if(!marching_cubes_create_vbos(volume, 
 								   volume_size, 
@@ -756,8 +756,8 @@ int render_export_obj(char **buffer)
 	glBindBuffer(GL_ARRAY_BUFFER, normal_vbo);
 	glGetBufferSubData(GL_ARRAY_BUFFER, 0, normal_buffer_size, normal_data);
 	
-    // выделяем как можно больше памяти, чтобы вместились все данные
-    *buffer = (char*) malloc(sizeof(char) * (element_buffer_size + vertex_buffer_size + normal_buffer_size)*8);
+	// выделяем как можно больше памяти, чтобы вместились все данные
+	*buffer = (char*) malloc(sizeof(char) * (element_buffer_size + vertex_buffer_size + normal_buffer_size)*8);
 	*buffer[0] = '\0';
 	
 	strcat(*buffer, "# Generated via VRender\n");
@@ -938,17 +938,17 @@ void render_set_camera_fov(float fov)
 
 void render_get_opengl_version(int *major, int *minor)
 {
-    IF_FAILED(init_opengl);
+	IF_FAILED(init_opengl);
 
-    int gl_major = 0, gl_minor = 0;
-    const GLubyte *str = glGetString(GL_VERSION);
+	int gl_major = 0, gl_minor = 0;
+	const GLubyte *str = glGetString(GL_VERSION);
 
-    char *ptr = (char*) str;
+	char *ptr = (char*) str;
 
-    int flag_major = 0, flag_minor = 0;
-    while(*ptr != '\0') {
+	int flag_major = 0, flag_minor = 0;
+	while(*ptr != '\0') {
 
-        if(isalnum(*ptr)) {
+		if(isalnum(*ptr)) {
             if(*(ptr+1) == '.') {
                 if(!flag_major) {
                    gl_major = atoi(&(*ptr));
@@ -963,35 +963,35 @@ void render_get_opengl_version(int *major, int *minor)
                    flag_minor = 1;
                 }
             }
-        }
+		}
 
-        if(flag_major && flag_minor)
-            break;
+		if(flag_major && flag_minor)
+			break;
 
-        ptr++;
-    }
+	ptr++;
+	}
 
-    if(major)
-        *major = gl_major;
-    if(minor)
-        *minor = gl_minor;
+	if(major)
+		*major = gl_major;
+	if(minor)
+	*minor = gl_minor;
 }
 
 void render_get_current_volume(float **volume_ptr, vector3ui *size)
 {
-    IF_FAILED(init && volume_ptr != NULL && size != NULL);
+	IF_FAILED(init && volume_ptr != NULL && size != NULL);
 
-    *volume_ptr = volume;
-    *size = volume_size;
+	*volume_ptr = volume;
+	*size = volume_size;
 }
 
 void render_set_external_volume(float *volume_ptr, vector3ui size)
 {
-    IF_FAILED(init && volume_ptr);
+	IF_FAILED(init && volume_ptr);
 
-    render_set_volume_size(size, 0);
-    memcpy(volume, volume_ptr, sizeof(float) * size.x*size.y*size.z);
+	render_set_volume_size(size, 0);
+	memcpy(volume, volume_ptr, sizeof(float) * volume_size.x*volume_size.y*volume_size.z);
 
-    render_update_volume_tex();
-    update_volume_vbos();
+	render_update_volume_tex();
+	update_volume_vbos();
 }

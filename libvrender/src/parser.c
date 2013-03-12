@@ -1186,7 +1186,7 @@ static void eval_expr2(parser_t *p, float *value)
 
 			p->index++;
 			
-            // парсим выражение после :, но не вычисляем его
+			// парсим выражение после :, но не вычисляем его
 			float s = 0.0f;
 			p->skip_expr = 1;
 			eval_expr(p, &s);
@@ -1267,7 +1267,7 @@ static void eval_expr1(parser_t *p, float *value)
 				return;
 			
 			// получаем значение переменной к котрой будет присваиваться значение
-            // (для случаев += -= *= /=)
+			// (для случаев += -= *= /=)
 			float var_value = get_var_value(p, var_id);
 			
 			switch(p->tokens[last].type) {
@@ -1369,7 +1369,7 @@ static void destroy_vars(parser_t *p)
 {
 	IF_FAILED(p && p->init == 1);
 	
-    // удаляем все созданные переменные
+	// удаляем все созданные переменные
 	for(int i = 0; i < p->num_user_ids; i++) {
 		p->user_identifiers[i].type = 0;
 
