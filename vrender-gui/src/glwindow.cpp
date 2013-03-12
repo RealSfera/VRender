@@ -31,7 +31,7 @@ GLWindow::GLWindow(QWidget *parent) :
 
 	// форсировано включаем вертикальную синхронизацию
 	// это снижает нагрузку на CPU
-	//gl_format.setSwapInterval(0);
+	//gl_format.setSwapInterval(1); // fix-me
 	
 	// ...и устанавливаем
 	setFormat(gl_format);
