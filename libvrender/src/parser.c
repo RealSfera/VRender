@@ -482,6 +482,8 @@ static void eval_expr10(parser_t *p,float *value);
 static void eval_expr11(parser_t *p,float *value);
 static void atom(parser_t *p,float *value);
 
+static int is_stopping = 0;
+
 INLINE static int find_identifier(parser_t *p,const char *name, int type);
 char* get_var_name(parser_t *p,int global_id);
 INLINE static void set_error(parser_t *p,const char *error_text, int error_num);
@@ -790,6 +792,10 @@ static float get_var_value(parser_t *p, int global_id)
 // вычисление переменных, констант и функций
 static void atom(parser_t *p, float *value)
 {
+
+	if(is_stopping)
+		return;
+
 	int id = 0, last = 0;
 	
 	DMSG("atom: %s\n", p->tokens[p->index].data);
@@ -846,6 +852,9 @@ static void atom(parser_t *p, float *value)
 			DMSG("found int num: %f\n", *value);
 			p->index++;
 			break;
+		case UNKNOWN:
+			set_error(p, "encounter unknown token", 16);
+			return;
 		case PARENTH_RIGHT:
 			return;
 		default:
@@ -856,6 +865,10 @@ static void atom(parser_t *p, float *value)
 // вычисление скобок
 static void eval_expr11(parser_t *p, float *value)
 {
+
+	if(is_stopping)
+		return;
+
 	if(p->tokens[p->index].type == PARENTH_LEFT) {
 		p->index++;
 		
@@ -878,6 +891,10 @@ static void eval_expr11(parser_t *p, float *value)
 // вычисление унарного ! (факториал)
 static void eval_expr10(parser_t *p, float *value)
 {	
+
+	if(is_stopping)
+		return;
+
 	eval_expr11(p, value);
 	
 	if(p->skip_expr)
@@ -912,6 +929,10 @@ static void eval_expr10(parser_t *p, float *value)
 // вычисление унарного + и -
 static void eval_expr9(parser_t *p, float *value)
 {
+
+	if(is_stopping)
+		return;
+
 	int last = -1;
 	
 	if(p->tokens[p->index].type == PLUS || p->tokens[p->index].type == MINUS) {
@@ -936,6 +957,10 @@ static void eval_expr9(parser_t *p, float *value)
 // вычисление возведения в степень
 static void eval_expr8(parser_t *p, float *value)
 {
+
+	if(is_stopping)
+		return;
+
 	eval_expr9(p, value);
 
 	if(p->tokens[p->index].type == MULT_MULT) {
@@ -986,6 +1011,10 @@ static void eval_expr8(parser_t *p, float *value)
 // вычисление * и /
 static void eval_expr7(parser_t *p, float *value)
 {
+
+	if(is_stopping)
+		return;
+
 	eval_expr8(p, value);
 	
 	while(p->tokens[p->index].type == MULT || p->tokens[p->index].type == DIV) {
@@ -1020,6 +1049,10 @@ static void eval_expr7(parser_t *p, float *value)
 // вычисление + и -
 static void eval_expr6(parser_t *p, float *value)
 {
+
+	if(is_stopping)
+		return;
+
 	eval_expr7(p, value);
 	
 	while(p->tokens[p->index].type == PLUS || p->tokens[p->index].type == MINUS) {
@@ -1048,6 +1081,10 @@ static void eval_expr6(parser_t *p, float *value)
 // вычисление операций сравнения > < >= <=
 static void eval_expr5(parser_t *p, float *value)
 {
+
+	if(is_stopping)
+		return;
+
 	eval_expr6(p, value);
 	
 	if(p->tokens[p->index].type == GREATER || p->tokens[p->index].type == LESS ||
@@ -1084,6 +1121,10 @@ static void eval_expr5(parser_t *p, float *value)
 // вычисление операций сравнения != ==
 static void eval_expr4(parser_t *p, float *value)
 {
+
+	if(is_stopping)
+		return;
+
 	eval_expr5(p, value);
 	int last = 0;
 	
@@ -1113,6 +1154,10 @@ static void eval_expr4(parser_t *p, float *value)
 // вычисление цикла k..n: expr
 static void eval_expr3(parser_t *p, float *value)
 {
+
+	if(is_stopping)
+		return;
+
 	float begin = 0.0f, end = 0.0f;
 	
 	eval_expr4(p, value);
@@ -1137,6 +1182,10 @@ static void eval_expr3(parser_t *p, float *value)
 			//  запускаем цикл либо +1, либо -1
 			if(begin <= end) {
 				for(unsigned b = (unsigned) begin; b <= (unsigned) end; b++) {
+
+					if(is_stopping)
+						return;
+
 					p->index = last;
 					
 					// присваиваем i номер текущей итерации
@@ -1150,7 +1199,12 @@ static void eval_expr3(parser_t *p, float *value)
 				}
 			} else {
 				for(unsigned b = (unsigned) begin; b >= (unsigned) end; b--) {
+
+					if(is_stopping)
+						return;
+
 					p->index = last;
+
 					assign_variable(p, find_var(p, "i"), (float) b);
 
 					eval_expr0(p, &part);
@@ -1173,6 +1227,10 @@ static void eval_expr3(parser_t *p, float *value)
 // вычисление тернарного : ?
 static void eval_expr2(parser_t *p, float *value)
 {
+
+	if(is_stopping)
+		return;
+
 	eval_expr3(p, value);
 	
 	//if(p->skip_expr)
@@ -1220,6 +1278,9 @@ static void eval_expr2(parser_t *p, float *value)
 static void eval_expr1(parser_t *p, float *value)
 {
 	
+	if(is_stopping)
+		return;
+
 	if(p->tokens[p->index].type == IDENTIFIER) {
 		
 		DMSG("found identifier: %s\n", p->tokens[p->index].data);
@@ -1304,6 +1365,9 @@ static void eval_expr1(parser_t *p, float *value)
 // вычисление ,
 static void eval_expr0(parser_t *p, float *value)
 {
+	if(is_stopping)
+		return;
+
 	eval_expr1(p, value);
 	
 	if(p->tokens[p->index].type == COMMA) {
@@ -1319,6 +1383,8 @@ static void eval_expr0(parser_t *p, float *value)
 // проверка на последний индекс и точку-с-запятой
 static void eval_expr(parser_t *p, float *value)
 {
+	if(is_stopping)
+		return;
 	//DMSG("eval0: %s, i = %i\n", p->tokens[p->current_index].data, p->current_index);
 	
 	// есть ли ещё токены...
@@ -1343,6 +1409,10 @@ static void eval_expr(parser_t *p, float *value)
 void syntax_parser(parser_t *p)
 {
 	do {
+
+		if(is_stopping)
+			return;
+
 		float value = 0.0f;
 		if(p->tokens[p->index].type == IDENTIFIER) {
 			// если первый токен идентификатор, то парсим всё сначало
@@ -1443,7 +1513,11 @@ int parser_parse_text(parser_t *parser, const char *text, float_var_value_t *var
 		parser->error = 0;
 		parser->num_tokens = 0;
 		
-		if(!lexer_parser(parser, text))
+		int ret = lexer_parser(parser, text);
+
+		if(ret == 11)
+			return 1;
+		else if(ret == 1)
 			return -20;
 		
 		// выделяем память под доп. переменные и устанавливаем значение переменной "i" в 0.0f
@@ -1465,7 +1539,7 @@ int parser_parse_text(parser_t *parser, const char *text, float_var_value_t *var
 	
 	parser->index = 0;
 	
-	if(parser->error > 0) {
+	if(parser->error != 0) {
 		int ret = parser->error;
 		parser->error = 0;
 		
@@ -1519,6 +1593,9 @@ int lexer_parser(parser_t *p, const char *text)
 	char *ptr = (char*) text;
 	
 	while(*ptr != '\0') {
+
+		if(is_stopping)
+			return 11;
 		
 		// пропускаем пробелы
 		skip_ws(ptr);
@@ -1748,11 +1825,26 @@ int lexer_parser(parser_t *p, const char *text)
 			//printf("found error: %c (%i)\n", *ptr, (int) *ptr);
 			
 			// неверный символ, выходим с ошибкой
-			return 0;
+			return 1;
 		}
 		
 		
 	}
 	
-	return 1;
+	return 0;
+}
+
+void parser_stop()
+{
+	is_stopping = 1;
+}
+
+void parser_resume()
+{
+	is_stopping = 0;
+}
+
+int parser_is_stopped()
+{
+	return is_stopping;
 }

@@ -447,9 +447,14 @@ void GLWindow::set_number_of_threads(unsigned num)
 	threads_num = num;
 }
 
-void GLWindow::begin_generation()
+void GLWindow::stop_building()
+{
+	render_stop_building();
+}
+
+void GLWindow::update_render()
 {
 	render_set_grid_size(grid_size);
-	render_set_volume_size(volume_size, 1);
+	render_update_mc();
 	render_update_volume_tex();
 }

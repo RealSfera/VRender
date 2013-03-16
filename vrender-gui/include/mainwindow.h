@@ -74,7 +74,7 @@ class MainWindow : public QMainWindow
 
 		void on_volume_import_action_triggered();
 
-private:
+	private:
 		Ui::MainWindow *ui;
 		GLWindow *main_gl_window;
 		HelpDialog *build_help_dialog, *program_help_dialog;
@@ -82,6 +82,7 @@ private:
 		
 		void timerEvent(QTimerEvent *event);
 		void closeEvent(QCloseEvent *) {qApp->quit();}
+
 };
 
 #endif // MAINWINDOW_H

@@ -64,13 +64,22 @@ typedef struct {
 extern "C" {
 #endif
 
-// создать парсер (установить параметры по-умолчанию)
+/* Создать парсер (установить параметры по-умолчанию) */
 int parser_create(parser_t *parser);
 
-// парсить строку text использую таблицу переменных var_table
+/* Парсить строку text использую таблицу переменных var_table */
 int parser_parse_text(parser_t *parser, const char *text, float_var_value_t *var_table);
 
-// очистить ресурсы парсера
+/* Глобально остановить все парсеры (для случаев зацикливания) */
+void parser_stop();
+
+/* Восстановить работу парсеров после parser_stop() */
+void parser_resume();
+
+/* Возвращает 1, если парсеры глобально остановлены */
+int parser_is_stopped();
+
+/* Очистить ресурсы парсера */
 void parser_clean(parser_t *parser);
 
 #ifdef __cplusplus

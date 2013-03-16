@@ -40,6 +40,12 @@ int render_init(void);
 /* Освободить ресурсы рендера */
 void render_destroy(void);
 
+/* Обновить полигонизацию */
+void render_update_mc();
+
+/* Остановить построение скалярного поля */
+void render_stop_building();
+
 /* Установить различные параметры */
 void render_set_isolevel(float level);
 void render_set_isolevel_animation(int animate);
@@ -65,6 +71,12 @@ void render_set_camera_move_speed(float speed);
 void render_set_camera_fov(float fov);
 void render_set_number_of_threads(unsigned num);
 int render_set_function_text(const char *function_text);
+
+/* Получить текущее значение изо-уровня */
+float render_get_isolevel();
+
+/* Получить текущее значение угла расположения источника света */
+float render_get_light_angle();
 
 /** 
  * Экспортирует текущий объект (с текущим изо-уровнем) в buffer в формате wavefront (.obj)

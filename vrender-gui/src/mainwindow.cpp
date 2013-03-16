@@ -20,7 +20,7 @@
 #include "ui_mainwindow.h"
 #include "glwindow.h"
 
-#define VERSION STRINGIFY(1.0.1)
+#define VERSION STRINGIFY(1.0.2)
 #define MAGIC_NUMBER 0xE0E0A1B9
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -103,6 +103,12 @@ void MainWindow::timerEvent(QTimerEvent *)
 	main_gl_window->set_isolevel_begin(ui->isolevel_value_begin->value());
 	main_gl_window->set_isolevel_end(ui->isolevel_value_end->value());
 	main_gl_window->set_isolevel_step(ui->isolevel_value_step->value());
+
+	// получаем текущее значение изо-уровня и устанавливаем его в UI
+	ui->isolevel_value->setValue(main_gl_window->get_isolevel());
+
+	// получаем текущий угол источника света и устанавливаем его в UI
+	ui->light_rot_angle->setValue(main_gl_window->get_light_angle());
 }
 
 void MainWindow::on_build_start_clicked()
@@ -111,8 +117,7 @@ void MainWindow::on_build_start_clicked()
 	if(!ui->build_function_text->toPlainText().isEmpty()) {
 		
 		QMessageBox *builder_msg = new QMessageBox(this);
-		builder_msg->setAttribute(Qt::WA_DeleteOnClose);
-		builder_msg->setWindowModality(Qt::NonModal);
+		QPushButton *button = builder_msg->addButton("Stop", QMessageBox::ActionRole);
 		builder_msg->setWindowTitle(QString::fromUtf8("Построение..."));
 		builder_msg->setText(QString::fromUtf8("Идёт построение скалярного поля, подождите..."));
 		
@@ -126,10 +131,44 @@ void MainWindow::on_build_start_clicked()
 		ui->grid_size_value_y->setMaximum(ui->volume_size_value_y->value());
 		ui->grid_size_value_z->setMaximum(ui->volume_size_value_z->value());
 
-		if( main_gl_window->set_function_text(ui->build_function_text->toPlainText().toAscii().data()) )
-			main_gl_window->begin_generation();
+		bool flag_is_cancle = false;
+
+		if( main_gl_window->set_function_text(ui->build_function_text->toPlainText().toAscii().data()) ) {
+
+			// создаём воркера, который будет работать в отдельном потоке
+			// воркер запускает процедуру построения скалярного поля
+			// это позволяет выполнять остановку построения, а также исправление надоедливого зависания программы
+
+
+			BuildWorker worker(main_gl_window->get_volume_size(), main_gl_window->get_grid_size());
+			QThread thread;
+
+			worker.moveToThread(&thread);
+
+			QObject::connect(&thread, SIGNAL(started()),	&worker, SLOT(process()));
+			QObject::connect(&worker, SIGNAL(finished()),	&thread, SLOT(quit()));
+
+			thread.start();
+
+			// пока поток работает, обрабатываем события, ждём нажатие клавиши для остановки
+			while(thread.isRunning()) {
+
+				qApp->processEvents();
+
+				if(!flag_is_cancle && (builder_msg->clickedButton() == button)) {
+					flag_is_cancle = true;
+					main_gl_window->stop_building();
+				}
+
+			}
+
+			main_gl_window->update_render();
+
+		}
 		
-		builder_msg->close();
+		qApp->processEvents();
+		if(!flag_is_cancle)
+			builder_msg->close();
 		
 	} else {
 		QMessageBox::critical(this, QString::fromUtf8("Ошибка"), QString::fromUtf8("Поле с функцией пустое"));
@@ -138,17 +177,19 @@ void MainWindow::on_build_start_clicked()
 
 void MainWindow::on_about_program_action_triggered()
 {
-	QMessageBox::information(this, QString::fromUtf8("О программе..."), 
-								   QString::fromUtf8("VRender - это программа для построения и визуализации скалярных полей\n\n" \
-													 "Версия: "VERSION"\n" \
-													 "Автор: Евгений 'Sfera' Панов\n\n" \
-													 "Лицензия: GPL v3 (см. файл LICENSE)\n"));
+	QMessageBox::about(this, QString::fromUtf8("О программе..."),
+							 QString::fromUtf8("VRender - это программа для построения и визуализации скалярных полей\n\n" \
+							 "Версия: "VERSION"\n" \
+							 "Автор: Евгений 'Sfera' Панов\n" \
+							 "Сайт проекта: https://github.com/Sfera2/VRender\n\n" \
+							 "Лицензия: GPL v3 (см. файл LICENSE)\n"));
 	
 }
 
 void MainWindow::on_light_rot_angle_valueChanged(int)
 {
-	main_gl_window->set_light_angle(ui->light_rot_angle->value());
+	if(!ui->light_rot_auto->isChecked())
+		main_gl_window->set_light_angle(ui->light_rot_angle->value());
 }
 
 void MainWindow::on_light_rot_auto_toggled(bool checked)
@@ -187,7 +228,8 @@ void MainWindow::on_isolevel_animate_box_toggled(bool checked)
 
 void MainWindow::on_isolevel_value_valueChanged(double)
 {
-	main_gl_window->set_isolevel(ui->isolevel_value->value());
+	if(!ui->isolevel_animate_box->isChecked())
+		main_gl_window->set_isolevel(ui->isolevel_value->value());
 }
 
 void MainWindow::on_build_help_action_triggered()
@@ -443,7 +485,7 @@ void MainWindow::on_volume_import_action_triggered()
 		if(magic != (quint32) MAGIC_NUMBER) {
 			QMessageBox::critical(this,
 								  QString::fromUtf8("Ошибка импорта"),
-								  QString::fromUtf8("Неверный формат файла. [0x01]"));
+								  QString::fromUtf8("Неверный формат файла. [1]"));
 			file.close();
 			return;
 		}
@@ -453,21 +495,30 @@ void MainWindow::on_volume_import_action_triggered()
 		if(vstring != QString("VRender")) {
 			QMessageBox::critical(this,
 								  QString::fromUtf8("Ошибка импорта"),
-								  QString::fromUtf8("Неверный формат файла. [0x02]"));
+								  QString::fromUtf8("Неверный формат файла. [2]"));
 			file.close();
 			return;
 		}
 
 		QString version;
-	data_stream >> version;
+		data_stream >> version;
 
-		// в будущих версиях будет добавлена обратная совместимость
 		if(version != QString(VERSION)) {
-			QMessageBox::critical(this,
-								  QString::fromUtf8("Ошибка импорта"),
-								  QString::fromUtf8("Неверная версия импортируемого файла."));
-			file.close();
-			return;
+
+			bool is_found = false;
+
+			// проверяем на совместимость с прошлыми версиями
+
+			if(version == QString("1.0.1")) is_found = true;
+			//else if(version == QString("1.0.2")) is_found = true;
+
+			if(!is_found) {
+				QMessageBox::critical(this,
+									  QString::fromUtf8("Ошибка импорта"),
+									  QString::fromUtf8("Неверная версия импортируемого файла."));
+				file.close();
+				return;
+			}
 		}
 
 		vector3ui size;

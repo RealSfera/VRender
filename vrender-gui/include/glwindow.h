@@ -22,6 +22,33 @@
 #include "render.h"
 #include <QtOpenGL/QGLWidget>
 
+class BuildWorker : public QObject {
+	Q_OBJECT
+
+	vector3ui volume_size, grid_size;
+
+	public:
+		BuildWorker(vector3ui volume_size, vector3ui grid_size)
+		{
+			this->volume_size = volume_size;
+			this->grid_size = grid_size;
+		}
+
+		~BuildWorker() {}
+
+	public slots:
+		void process()
+		{
+
+			render_set_volume_size(volume_size, 1); // 1 - значит нужно перестроить скалярное поле
+
+			emit finished();
+		}
+
+	signals:
+		void finished();
+};
+
 class GLWindow : public QGLWidget
 {
 		Q_OBJECT
@@ -93,8 +120,29 @@ class GLWindow : public QGLWidget
 		void set_camera_move_speed(float speed);
 		void set_camera_fov(float fov);
 		void set_number_of_threads(unsigned num);
+
+		float get_isolevel()
+		{
+			return render_get_isolevel();
+		}
+
+		float get_light_angle()
+		{
+			return render_get_light_angle();
+		}
 		
-		void begin_generation();
+		void stop_building();
+		void update_render();
+
+		vector3ui get_volume_size()
+		{
+			return volume_size;
+		}
+
+		vector3ui get_grid_size()
+		{
+			return grid_size;
+		}
 		
 	protected:
 		void paintGL();

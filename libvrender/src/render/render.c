@@ -33,6 +33,8 @@
 
 static int init = 0, init_opengl = 0;
 
+static int is_stop_building = 0;
+
 static unsigned num_threads = 1;
 
 // основная камера
@@ -192,7 +194,7 @@ void render_update_volume_tex(void)
 	init = 1;
 }
 
-static void update_volume_vbos(void)
+void render_update_mc(void)
 {
 	glBindVertexArray(0);
 
@@ -297,7 +299,7 @@ int render_init(void)
 	init = 1;
 	
 	// полигонизируем ск. п.
-	update_volume_vbos();
+	render_update_mc();
 	
 	// обновляем рендер
 	render_update(0.0f);
@@ -336,7 +338,7 @@ void render_set_grid_size(vector3ui grid_size_v)
 	grid_size = grid_size_v;
 	grid_step = vec3f_div(vec3f(1.0f, 1.0f, 1.0f), vec3ui_to_vec3f(grid_size));
 
-	update_volume_vbos();
+	render_update_mc();
 }
 
 void render_set_volume_size(vector3ui volume_size_v, int rebuild)
@@ -344,22 +346,26 @@ void render_set_volume_size(vector3ui volume_size_v, int rebuild)
 	volume_size = vec3ui_add_c(volume_size_v, 1);
 	volume_step = vec3f_div(vec3f(1.0f, 1.0f, 1.0f), vec3ui_to_vec3f(volume_size));
 	
-	if(volume) {
-		free(volume);
-		volume = NULL;
-	}
-	
-	volume = (float*) malloc(sizeof(float) * volume_size.x*volume_size.y*volume_size.z);
+	float *new_volume = (float*) malloc(sizeof(float) * volume_size.x*volume_size.y*volume_size.z);
+	IF_FAILED(new_volume != NULL);
 	
 	if(rebuild) {
+
+		is_stop_building = 0;
+
+		if(parser_is_stopped())
+			parser_resume();
+
 		// проверяем количество потоков и решаем использовать ли многопоточность
 		if(num_threads >= 2) {
 
 			// устанавливаем кол-во потоков
 			omp_set_num_threads(num_threads);
 
+			int *stop_ptr = &is_stop_building;
+
 			// запускаем паралельно данный участок кода
-			#pragma omp parallel firstprivate(volume_size) shared(volume, str_function)
+			#pragma omp parallel firstprivate(volume_size) shared(new_volume, str_function, stop_ptr)
 			{
 				int i = omp_get_thread_num();
 
@@ -385,18 +391,22 @@ void render_set_volume_size(vector3ui volume_size_v, int rebuild)
 					for(unsigned j = begin.y; j < end.y; j++) {
 						for(unsigned i = begin.x; i < end.x; i++) {
 
+							if(*stop_ptr)
+								goto exit_loop;
+
 							float_vars[0].value = 0.0f; float_vars[1].value = i;
 							float_vars[2].value = j; float_vars[3].value = k;
 
 							if(parser_parse_text(&tparser, str_function, float_vars) == 0) {
-								volume[i + j*volume_size.x + k*volume_size.x*volume_size.y] = float_vars[0].value;
+								new_volume[i + j*volume_size.x + k*volume_size.x*volume_size.y] = float_vars[0].value;
 							}
 						}
 					}
 				}
 
-				parser_clean(&tparser);
+				exit_loop:
 
+				parser_clean(&tparser);
 			}
 
 		} else {
@@ -404,14 +414,33 @@ void render_set_volume_size(vector3ui volume_size_v, int rebuild)
 			for(unsigned k = 0; k < volume_size.z; k++) {
 				for(unsigned j = 0; j < volume_size.y; j++) {
 					for(unsigned i = 0; i < volume_size.x; i++) {
-						volume[i + j*volume_size.x + k*volume_size.x*volume_size.y] = volume_func(vec3f(i, j, k));
+
+						if(is_stop_building)
+							goto exit_loop2;
+
+						new_volume[i + j*volume_size.x + k*volume_size.x*volume_size.y] = volume_func(vec3f(i, j, k));
 					}
 				}
 			}
+
+			exit_loop2: ; // ....
+
 		}
 
-		update_volume_vbos();
 	}
+
+	if(!is_stop_building) {
+
+		if(volume) {
+			free(volume);
+			volume = NULL;
+		}
+
+		volume = new_volume;
+	} else {
+		free(new_volume);
+	}
+
 }
 
 void render_update(double last_frame_time)
@@ -479,7 +508,7 @@ void render_update(double last_frame_time)
 	
 	// обновляем вершинные буферы
 	if(isolevel_animate)
-		update_volume_vbos();
+		render_update_mc();
 	
 	shader_program_bind(&program);
 	
@@ -676,6 +705,9 @@ int render_set_function_text(const char *function_text)
 			{4, 0.0f}, // z
 			{0, 0.0f}
 		};
+
+	if(parser_is_stopped())
+		parser_resume();
 	
 	int error = 0;
 	
@@ -833,7 +865,7 @@ int render_export_obj(char **buffer)
 void render_set_isolevel(float level)
 {
 	isolevel = level;
-	update_volume_vbos();
+	render_update_mc();
 }
 
 void render_set_isolevel_animation(int animate)
@@ -936,6 +968,16 @@ void render_set_camera_fov(float fov)
 	camera_set_fov(&camera, camera_fov);
 }
 
+float render_get_isolevel()
+{
+	return isolevel;
+}
+
+float render_get_light_angle()
+{
+	return light_rot_angle;
+}
+
 void render_get_opengl_version(int *major, int *minor)
 {
 	IF_FAILED(init_opengl);
@@ -993,5 +1035,13 @@ void render_set_external_volume(float *volume_ptr, vector3ui size)
 	memcpy(volume, volume_ptr, sizeof(float) * volume_size.x*volume_size.y*volume_size.z);
 
 	render_update_volume_tex();
-	update_volume_vbos();
+	render_update_mc();
+}
+
+void render_stop_building()
+{
+	is_stop_building = 1;
+
+	// глобально останавливаем все парсящие процедуры
+	parser_stop();
 }
