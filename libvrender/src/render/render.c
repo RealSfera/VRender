@@ -33,8 +33,13 @@
 
 static int init = 0, init_opengl = 0;
 
+// остановка построения
 static int is_stop_building = 0;
 
+// необходимо ли в основном потоке обменять местами new_volume и volume
+static int is_swap_volumes = 0;
+
+// количество потоков
 static unsigned num_threads = 1;
 
 // основная камера
@@ -43,7 +48,7 @@ static camera_t camera;
 static double last_time = 0.0f;
 
 static parser_t parser;
-static float *volume = NULL;
+static float *volume = NULL, *new_volume = NULL;
 static char *str_function = NULL;
 
 // размер скалярного поля и размер сетки
@@ -102,6 +107,7 @@ static void update_object_orientation(void);
 static void update_camera(double t);
 static int init_shader(void);
 static int init_buffers(void);
+static void swap_volumes(void);
 
 int init_shader(void)
 {
@@ -173,6 +179,17 @@ int init_buffers(void)
 	return 1;
 }
 
+void swap_volumes(void)
+{
+	if(volume) {
+		free(volume);
+		volume = NULL;
+	}
+
+	volume = new_volume;
+	new_volume = NULL;
+}
+
 void render_update_volume_tex(void)
 {		
 	static int init = 0;
@@ -196,6 +213,12 @@ void render_update_volume_tex(void)
 
 void render_update_mc(void)
 {
+
+	if(is_swap_volumes) {
+		swap_volumes();
+		is_swap_volumes = 0;
+	}
+
 	glBindVertexArray(0);
 
 	// полигонизируем скалярное поле
@@ -346,7 +369,7 @@ void render_set_volume_size(vector3ui volume_size_v, int rebuild)
 	volume_size = vec3ui_add_c(volume_size_v, 1);
 	volume_step = vec3f_div(vec3f(1.0f, 1.0f, 1.0f), vec3ui_to_vec3f(volume_size));
 	
-	float *new_volume = (float*) malloc(sizeof(float) * volume_size.x*volume_size.y*volume_size.z);
+	new_volume = (float*) malloc(sizeof(float) * volume_size.x*volume_size.y*volume_size.z);
 	IF_FAILED(new_volume != NULL);
 	
 	if(rebuild) {
@@ -431,14 +454,12 @@ void render_set_volume_size(vector3ui volume_size_v, int rebuild)
 
 	if(!is_stop_building) {
 
-		if(volume) {
-			free(volume);
-			volume = NULL;
-		}
-
-		volume = new_volume;
+		is_swap_volumes = 1;
 	} else {
 		free(new_volume);
+		new_volume = NULL;
+
+		is_swap_volumes = 0;
 	}
 
 }

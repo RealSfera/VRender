@@ -20,7 +20,7 @@
 #include "ui_mainwindow.h"
 #include "glwindow.h"
 
-#define VERSION STRINGIFY(1.0.2)
+#define VERSION STRINGIFY(1.0.3)
 #define MAGIC_NUMBER 0xE0E0A1B9
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -510,7 +510,8 @@ void MainWindow::on_volume_import_action_triggered()
 			// проверяем на совместимость с прошлыми версиями
 
 			if(version == QString("1.0.1")) is_found = true;
-			//else if(version == QString("1.0.2")) is_found = true;
+			else if(version == QString("1.0.2")) is_found = true;
+			//else if(version == QString("1.0.3")) is_found = true;
 
 			if(!is_found) {
 				QMessageBox::critical(this,
@@ -540,6 +541,8 @@ void MainWindow::on_volume_import_action_triggered()
 		main_gl_window->set_volume_size(size);
 
 		ui->build_function_text->setPlainText("");
+
+		main_gl_window->update_render();
 
 		QMessageBox::information(this,
 							   QString::fromUtf8("Импорт скалярного поля"),
