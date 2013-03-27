@@ -369,10 +369,10 @@ void render_set_volume_size(vector3ui volume_size_v, int rebuild)
 	volume_size = vec3ui_add_c(volume_size_v, 1);
 	volume_step = vec3f_div(vec3f(1.0f, 1.0f, 1.0f), vec3ui_to_vec3f(volume_size));
 	
-	new_volume = (float*) malloc(sizeof(float) * volume_size.x*volume_size.y*volume_size.z);
-	IF_FAILED(new_volume != NULL);
-	
 	if(rebuild) {
+
+		new_volume = (float*) malloc(sizeof(float) * volume_size.x*volume_size.y*volume_size.z);
+		IF_FAILED(new_volume != NULL);
 
 		is_stop_building = 0;
 
@@ -450,16 +450,17 @@ void render_set_volume_size(vector3ui volume_size_v, int rebuild)
 
 		}
 
-	}
 
-	if(!is_stop_building) {
+		if(!is_stop_building) {
 
-		is_swap_volumes = 1;
-	} else {
-		free(new_volume);
-		new_volume = NULL;
+			is_swap_volumes = 1;
+		} else {
+			free(new_volume);
+			new_volume = NULL;
 
-		is_swap_volumes = 0;
+			is_swap_volumes = 0;
+		}
+
 	}
 
 }
