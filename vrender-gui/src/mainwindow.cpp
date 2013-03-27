@@ -105,10 +105,12 @@ void MainWindow::timerEvent(QTimerEvent *)
 	main_gl_window->set_isolevel_step(ui->isolevel_value_step->value());
 
 	// получаем текущее значение изо-уровня и устанавливаем его в UI
-	ui->isolevel_value->setValue(main_gl_window->get_isolevel());
+	if(ui->isolevel_animate_box->isChecked())
+		ui->isolevel_value->setValue(main_gl_window->get_isolevel());
 
 	// получаем текущий угол источника света и устанавливаем его в UI
-	ui->light_rot_angle->setValue(main_gl_window->get_light_angle());
+	if(ui->light_rot_auto->isChecked())
+		ui->light_rot_angle->setValue(main_gl_window->get_light_angle());
 }
 
 void MainWindow::on_build_start_clicked()
